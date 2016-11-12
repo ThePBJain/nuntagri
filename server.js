@@ -35,7 +35,8 @@ try {
 }
 
 // Webserver parameter
-const PORT = process.env.PORT || 8443; //443
+//const PORT = process.env.PORT || 8443; //443
+const PORT = 8443;
 
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;

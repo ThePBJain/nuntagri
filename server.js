@@ -36,7 +36,6 @@ try {
 
 // Webserver parameter
 const PORT = process.env.PORT || 8443; //443
-var CART = 9691;
 
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;
@@ -638,17 +637,17 @@ function verifyRequestSignature(req, res, buf) {
   }
 }
 
-//app.listen(PORT);
-//console.log('Listening on :' + PORT + '...');
+app.listen(PORT);
+console.log('Listening on :' + PORT + '...');
 
 //create server and put on port 443...
-var fs = require('fs');
+//var fs = require('fs');
 
-var options = {
+/*var options = {
 	key: fs.readFileSync('STAR_consensuscorpdev_com.key'),
 	cert: fs.readFileSync('STAR_consensuscorpdev_com.crt'),
 	ca: fs.readFileSync('STAR_consensuscorpdev_com.ca-bundle'),
 };
 //http.createServer(app).listen(80);
 https.createServer(options, app).listen(443);
-console.log('Listening on port: ' + 443 + '...');
+console.log('Listening on port: ' + 443 + '...');*/

@@ -1,0 +1,22 @@
+{
+  "name": "fbbot",
+  "version": "1.0.0",
+  "description": "Node.js of Fb Messenger app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": "6.2.2"
+  },
+  "author": "Pranav Jain <Pranav.Jain@Consensuscorp.com>",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "json-query": "^2.1.1",
+    "node-schedule": "^1.1.1",
+    "node-wit": "^4.0.0",
+    "request": "^2.74.0"
+  }
+}

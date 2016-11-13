@@ -351,6 +351,7 @@ const actions = {
 					delete context.fail;
 					context.success = true;
 				}else{
+					console.log(JSON.stringify(sessions[sessionId]));
 					if(sessions[sessionId].seller == null && sessions[sessionId].deliverer != null){
 						sessions[sessionId].buyer = {
 							orders: [

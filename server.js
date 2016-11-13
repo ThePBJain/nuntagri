@@ -516,9 +516,6 @@ app.get('/webhook', (req, res) => {
 
 app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
-  var fs = require('fs');
-  var obj = JSON.parse(fs.readFileSync('catalog.json', 'utf8'));
-  console.log("\n\n Test: " + obj.Category[0].name);
 });
 
 

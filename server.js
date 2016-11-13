@@ -683,6 +683,7 @@ app.post('/webhook', (req, res) => {
               
               //Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
+			console.log("Test")
               console.log("Context: " + JSON.stringify(context));
 			  if(context.complete){
 				  context = {};
@@ -691,7 +692,7 @@ app.post('/webhook', (req, res) => {
               sessions[sessionId].context = context;
             })
             .catch((err) => {
-              console.error('Oops! Got an error from Wit: ', err.stack || err);
+              console.error('Oops! Got an error from Wit1: ', err.stack || err);
             })
           }
         } else {

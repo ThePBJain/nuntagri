@@ -359,10 +359,11 @@ const actions = {
 									end: sessions[sessionId].location
 								}
 							]
-						}
+						};
 						delete context.fail;
 						context.success = true;
 					}else{
+						console.log("OWFNPONFPWNFOWP:FEN");
 						delete context.success;
 						context.fail = true;
 					}

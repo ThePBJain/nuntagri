@@ -395,6 +395,12 @@ const actions = {
 			var load = parseFloat(firstEntityValue(entities, 'load'))
 			var measurement = firstEntityValue(entities, 'measurement')
 			console.log("Load: " + load + "\n Measurement: " + measurement);
+			sessions[sessionId].deliverer = {
+			capacity: 0,
+			queue: [],
+			range: 0,
+			rate: 5
+			}
 			if(measurement){
 				if(measurement == "Kilograms"){
 					sessions[sessionId].deliverer.capacity = load;

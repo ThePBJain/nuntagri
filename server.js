@@ -684,7 +684,7 @@ app.post('/webhook', (req, res) => {
               //Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
               console.log("Context: " + JSON.stringify(context));
-			  if(context.complete || context.success){
+			  if(context.complete){
 				  context = {};
 			  }
               // Updating the user's current session state

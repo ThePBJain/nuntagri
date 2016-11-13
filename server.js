@@ -365,7 +365,8 @@ const actions = {
 		return new Promise(function(resolve, reject) {
 			var loc = firstEntityValue(entities, 'location')
 			sessions[sessionId].location = loc;
-
+			delete context.fail;
+			context.success = true;
 			return resolve(context);
 		});
 	},

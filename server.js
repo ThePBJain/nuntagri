@@ -142,28 +142,9 @@ const findOrCreateSession = (fbid) => {
 		
 		},
 		name: "Pranav Jain",
-		seller: {
-			list: [
-				{name: "carrots", amount: 50},
-				{name: "potato", amount: 60}
-			]
-		},
-		buyer: {
-			orders: [
-				{
-					start: "loc",
-					name: "carrots",
-					amount: 50,
-					end: "loc"
-				}
-			]
-		},
-		deliverer: {
-			capacity: 50,
-			queue: [],
-			range: 50,
-			rate: 2
-		},
+		seller: null,
+		buyer: null,
+		deliverer: null,
 		location: null
 	};
   }

@@ -256,6 +256,7 @@ const actions = {
 			//failure flag
 			var flag = false;
 			//pput everything in kilos
+			console.log("Load: " + load + "\nMeasurement: " + measurement);
 			if(measurement != "Kilograms"){
 				if(measurement == "Pounds"){
 					//convert pounds to kilos
@@ -295,6 +296,7 @@ const actions = {
 					flag = true;
 				}
 			}
+			console.log("Load: " + load + "\nMeasurement: " + measurement + "\nFlag: " + flag);
 			if(flag){
 				delete context.successNew;
 				delete context.success;
@@ -312,6 +314,7 @@ const actions = {
 			var load = parseFloat(firstEntityValue(entities, 'load'));
 			var product = firstEntityValue(entities, 'product');
 			var theProduct = null;
+			console.log("Load: " + load + "\nMeasurement: " + measurement);
 			Object.keys(sessions).forEach(k => {
 				if (sessions[k].seller != null) {
 				// Yep, got it!
@@ -329,6 +332,7 @@ const actions = {
 			}
 			});
 			if(theProduct){
+				console.log("theProduct does exist");
 				if(sessions[sessionId].buyer != null){
 					//add order to list of orders
 					var temp = {

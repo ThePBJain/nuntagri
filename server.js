@@ -364,9 +364,21 @@ const actions = {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
 			var loc = firstEntityValue(entities, 'location')
+			if(loc){
 			sessions[sessionId].location = loc;
+			}else{
+				sessions[sessionId].location = "246 Saint Phillip Ct.";
+			}
 			delete context.fail;
 			context.success = true;
+			return resolve(context);
+		});
+	},
+	complete({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			
+			delete context.complete = true;
 			return resolve(context);
 		});
 	},
@@ -643,7 +655,7 @@ app.post('/webhook', (req, res) => {
               //Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
               console.log("Context: " + JSON.stringify(context));
-			  if(context.number || context.failure || context.item || context.success){
+			  if(context.complete || context.success){
 				  context = {};
 			  }
               // Updating the user's current session state

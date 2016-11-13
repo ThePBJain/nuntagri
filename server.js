@@ -318,12 +318,13 @@ const actions = {
 			var load = parseFloat(firstEntityValue(entities, 'load'));
 			var product = firstEntityValue(entities, 'product');
 			var theProduct = null;
-			console.log("Load: " + load + "\nMeasurement: " + measurement);
+			console.log("Load: " + load + "\nMeasurement: " + measurement + "\nProduct: " + product);
 			Object.keys(sessions).forEach(k => {
 				if (sessions[k].seller != null) {
 				// Yep, got it!
 				for(var i=0; i < sessions[k].seller.list.length; i++){
 					if(sessions[k].seller.list[i].name == product){
+						console.log(sessions[k].seller.list[i].name);
 						if(sessions[k].seller.list[i].amount >= load){
 							theProduct = sessions[k];
 							sessions[k].seller.list[i].amount -= load;
@@ -335,7 +336,7 @@ const actions = {
 				}
 			}
 			});
-			console.log("Load: " + load + "\nMeasurement: " + measurement + "\theProduct: " + JSON.stringify(theproduct));
+			//console.log("Load: " + load + "\nMeasurement: " + measurement + "\theProduct: " + JSON.stringify(theproduct));
 			if(theProduct){
 				console.log("theProduct does exist");
 				if(sessions[sessionId].buyer != null){

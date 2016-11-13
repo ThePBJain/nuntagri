@@ -306,6 +306,8 @@ const actions = {
 			}else{
 				delete context.fail;
 			}
+			
+			console.log("Context: " + JSON.stringify(context));
 			return resolve(context);
 		});
 	},

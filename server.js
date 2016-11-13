@@ -600,7 +600,7 @@ app.post('/webhook', (req, res) => {
           // We retrieve the Facebook user ID of the sender
           const sender = event.sender.id;
 		  //308115649579044 -  should not take results from this fbid because it's us.
-		  if(sender == "308115649579044"){
+		  if(sender == "883952921740002"){
 		      console.log("got request from self!!!!!");
 		      //res.sendStatus(200);
 		      return;

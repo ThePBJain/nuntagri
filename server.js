@@ -293,10 +293,12 @@ const actions = {
 						list: [{name: product, amount: load}]
 					}
 				}else{
+					console.log("In HERE----------------");
 					flag = true;
 				}
 			}
 			console.log("Load: " + load + "\nMeasurement: " + measurement + "\nFlag: " + flag);
+			console.log("Context: " + JSON.stringify(context));
 			if(flag){
 				delete context.successNew;
 				delete context.success;

@@ -317,6 +317,7 @@ const actions = {
 			var measurement = firstEntityValue(entities, 'measurement');
 			var load = parseFloat(firstEntityValue(entities, 'load'));
 			var product = firstEntityValue(entities, 'product');
+			var index = 0;
 			var theProduct = null;
 			console.log("Load: " + load + "\nMeasurement: " + measurement + "\nProduct: " + product);
 			Object.keys(sessions).forEach(k => {
@@ -327,7 +328,7 @@ const actions = {
 						console.log(sessions[k].seller.list[i].name);
 						if(sessions[k].seller.list[i].amount >= load){
 							theProduct = sessions[k];
-							sessions[k].seller.list[i].amount -= load;
+							index = i;
 						}
 						if(sessions[k].seller.list[i].amount <= 0){
 							sessions[k].seller.list.splice(i,1);
@@ -348,6 +349,7 @@ const actions = {
 						end: sessions[sessionId].location
 					}
 					sessions[sessionId].buyer.orders.push(temp);
+					theProduct.seller.list[index].amount -= load;
 					delete context.fail;
 					context.success = true;
 				}else{
@@ -363,6 +365,7 @@ const actions = {
 								}
 							]
 						};
+						theProduct.seller.list[index].amount -= load;
 						delete context.fail;
 						context.success = true;
 					}else{

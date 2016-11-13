@@ -426,7 +426,6 @@ const actions = {
 				delete context.success;
 				context.fail = true;
 			}
-			sessions[sessionId].location = loc;
 
 			return resolve(context);
 		});

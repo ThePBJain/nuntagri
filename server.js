@@ -321,6 +321,9 @@ const actions = {
 							theProduct = sessions[k];
 							sessions[k].seller.list[i].amount -= load;
 						}
+						if(sessions[k].seller.list[i].amount <= 0){
+							sessions[k].seller.list.splice(i,1);
+						}
 					}
 				}
 			}
@@ -335,6 +338,8 @@ const actions = {
 						end: sessions[sessionId].location
 					}
 					sessions[sessionId].buyer.orders.push(temp);
+					delete context.fail;
+					context.success = true;
 				}else{
 					if(sessions[sessionId].seller == null && sessions[sessionId].deliverer != null){
 						sessions[sessionId].buyer = {
@@ -347,6 +352,8 @@ const actions = {
 								}
 							]
 						}
+						delete context.fail;
+						context.success = true;
 					}else{
 						delete context.success;
 						context.fail = true;
@@ -387,6 +394,7 @@ const actions = {
 		return new Promise(function(resolve, reject) {
 			var load = parseFloat(firstEntityValue(entities, 'load'))
 			var measurement = firstEntityValue(entities, 'measurement')
+			console.log("Load: " + load + "\n Measurement: " + measurement);
 			if(measurement){
 				if(measurement == "Kilograms"){
 					sessions[sessionId].deliverer.capacity = load;

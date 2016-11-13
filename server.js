@@ -335,6 +335,7 @@ const actions = {
 				}
 			}
 			});
+			console.log("Load: " + load + "\nMeasurement: " + measurement + "\theProduct: " + JSON.stringify(theproduct));
 			if(theProduct){
 				console.log("theProduct does exist");
 				if(sessions[sessionId].buyer != null){
@@ -369,10 +370,11 @@ const actions = {
 					}
 				}
 			}else{
+				console.log("Everything failed.")
 				delete context.success;
 				context.fail = true;
 			}
-
+			console.log("createOrder: " + JSON.stringify(context));
 			return resolve(context);
 		});
 	},

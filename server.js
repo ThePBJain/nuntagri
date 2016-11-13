@@ -378,7 +378,7 @@ const actions = {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
 			
-			delete context.complete = true;
+			context.complete = true;
 			return resolve(context);
 		});
 	},

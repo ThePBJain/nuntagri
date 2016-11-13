@@ -105,55 +105,7 @@ function callSendAPI(messageData) {
     }
   });  
 }
-function sendGenericMessage(sessionId) {
-	console.log("Made it in GenericMessage");
-	const recipientId = sessions[sessionId].fbid;
-	var list = sessions[sessionId].list[0].Model;
-	//console.log(JSON.stringify(list));
-	
-	//for loop for parsing through each item in list and getting the name, subtitle, item url, image url, etc...
-	//then you have to somehow put it in a json which then goes where elements is now...
-	var element = [];
-	for(var i=0; i<list.length; i++){
-		var counter = list[i];
-		var unit = {
-			title: counter.name,
-            subtitle: counter.subtitle,
-            item_url: counter.itemUrl,            
-            image_url: counter.imageUrl,
-            buttons: [{
-              type: "web_url",
-              url: counter.itemUrl,
-              title: "Buy Now"
-            }, {
-              type: "postback",
-              title: "Add to Cart",
-              payload: JSON.stringify(counter), //should be counter.upc
-            }]
-		}
-		element.push(unit);
-	}
-	
-	//the Final JSON
-   var messageData = {
-    recipient: {
-      id: recipientId
-    },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements: element
-        }
-      }
-    }
-  }; 
-  //if recipient is Voicebox, dont send message...
-	if(recipientId != "308115649579045"){
-		callSendAPI(messageData);
-	}
-}
+
 // ----------------------------------------------------------------------------
 // Consensus API specific code 
 
@@ -189,11 +141,30 @@ const findOrCreateSession = (fbid) => {
 		context: {
 		
 		},
-		numItems: 0,
-		message: null,
-		type: null,
-		list: null,
-		cart: []
+		name: "Pranav Jain",
+		seller: {
+			list: [
+				{name: "carrots", amount: 50},
+				{name: "potato", amount: 60}
+			]
+		},
+		buyer: {
+			orders: [
+				{
+					start: "loc",
+					name: "carrots",
+					amount: 50,
+					end: "loc"
+				}
+			]
+		},
+		deliverer: {
+			capacity: 50,
+			queue: [],
+			range: 50,
+			rate: 2
+		},
+		location: null
 	};
   }
   return sessionId;
@@ -217,69 +188,22 @@ const firstEntityValue = (entities, entity) => {
 
 
 //search method to search through the catalog.json and get items
-const search = (list, sessionId, type, parameter, brand, color) => {
-	if(type && list.length != 1){
-		//fix this!!!
-		console.log("in here: " + JSON.stringify(list));
-		//could add a session.list over here to save the list
-		list = jsonQuery('[*].name', {
-			data: list,
-			allowRegexp: true
-		}).value
-		return list;
-	}else{
-		if(!sessions[sessionId].type){
-			sessions[sessionId].type = list[0].name;
+const selectDeliverers = (order, sessionId) => {
+	var bestdeliverer = null;
+	var closest = 10000;
+	Object.keys(sessions).forEach(k => {
+		if (sessions[k].deliverer != null) {
+		// Yep, got it!
+		var deliverer = sessions[k].deliverer;
+		if(deliverer.capacity >= order.amount){
+			bestdeliverer = deliverer;
 		}
-		//console.log(JSON.stringify(list));
-		if(parameter != null || brand != null){
-			//run if we have parameter, else just keep as is...
-			list = jsonQuery('Model[* name~/'+parameter+'/i | brand~/'+brand+'/i]', {
-				data: list,
-				allowRegexp: true
-			}).value;
-			//set up a flag to note that we have no "Model" and need a different regex
-			var temp = [{"Model": list}];
-			//console.log("hey budddy: " + JSON.stringify(temp));
-			sessions[sessionId].list = temp;
-	    }else{
-			//run to formatt correctly if null
-			sessions[sessionId].list = list;
-			list = jsonQuery('Model[*]', {
-				data: list,
-				allowRegexp: true
-			}).value;
-		}
-	  
-	  //write here a design that if the list is empty because of parameter, it will send a response saying "there is no item with that parameter"
-	  
-	  //fix color so that it doesn't fuck up
-	  if(color != null){
-		  console.log("checking color: " + list);
-		  var nameList = [];
-		  for(var i=0; i<list.length; i++){
-			console.log(list[i]);
-			var counter = list[i];
-			for(var j=0; j<counter.colors.length; j++){
-				if(counter.colors[j] === color){
-					console.log("In here");
-					nameList.push(counter.name);
-					break;
-				}
-			}
-		  }
-		  list = nameList;
-		}else{
-			//sessions[sessionId].list = list;
-			list = jsonQuery('[*].name', {
-				data: list,
-				allowRegexp: true
-		    }).value
-		}
-		
-		return list;
-		
 	}
+	bestdeliverer.queue.push(order);
+	});
+
+
+
 };
 //-----------------------------------------------------------------
 // Our bot actions
@@ -325,22 +249,180 @@ const actions = {
       return Promise.resolve()
     }
   },
-  updateCart({sessionId, context, entities}) {
+  getProductList({sessionId, context, entities}) {
 	  //used only for demo to find cart that addToCart method will send it too.
     return new Promise(function(resolve, reject) {
-      var intent = firstEntityValue(entities, 'intent')
-      console.log("Intent: " + intent + "\nCart #: " + CART);
-      if (intent == 'update') {
-		CART++;
-        context.number = CART;
-        sessions[sessionId].numItems = sessions[sessionId].cart.length;
-      } else {
-        context.number = 9999;
-      }
-      console.log("\nCart #: " + CART);
+		var list = "\n";
+		Object.keys(sessions).forEach(k => {
+			if (sessions[k].seller != null) {
+			// Yep, got it!
+			for(var i=0; i < sessions[k].seller.list.length; i++){
+				list += (sessions[k].seller.list[i].name + ": " + sessions[k].seller.list[i].amount + "kgs.\n");
+			}
+		}
+		context.list = list;
+		});
       return resolve(context);
     });
   },
+	parseProducts({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			//parse
+			var measurement = firstEntityValue(entities, 'measurement');
+			var load = parseFloat(firstEntityValue(entities, 'load'));
+			var product = firstEntityValue(entities, 'product');
+			//failure flag
+			var flag = false;
+			//pput everything in kilos
+			if(measurement != "Kilograms"){
+				if(measurement == "Pounds"){
+					//convert pounds to kilos
+					load = load * 0.453592;
+				}else if(measurement == "Tons"){
+					//Tons to kilos
+					load = load * 907.185;
+				}else if(measurement == "Cartons"){
+					load = load * 0.680389;
+				}else{
+					flag = true;
+				}
+			}
+
+			if(sessions[sessionId].seller != null){
+				delete context.successNew;
+				context.success = true;
+				var temp = {name: product, amount: load};
+				var didUpdate = false;
+				for(var i=0; i < sessions[sessionId].seller.list.length; i++){
+					if(sessions[sessionId].seller.list[i].name == product){
+						sessions[sessionId].seller.list[i].amount = load;
+						didUpdate = true;
+					}
+				}
+				if(!didUpdate) {
+					sessions[sessionId].seller.list.push(temp);
+				}
+			}else{
+				if(sessions[sessionId].buyer == null && sessions[sessionId].deliverer == null){
+					delete context.success;
+					context.successNew = true;
+					sessions[sessionId].seller = {
+						list: [{name: product, amount: load}]
+					}
+				}else{
+					flag = true;
+				}
+			}
+			if(flag){
+				delete context.successNew;
+				delete context.success;
+				context.fail = true;
+			}else{
+				delete context.fail;
+			}
+			return resolve(context);
+		});
+	},
+	createOrder({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var measurement = firstEntityValue(entities, 'measurement');
+			var load = parseFloat(firstEntityValue(entities, 'load'));
+			var product = firstEntityValue(entities, 'product');
+			var theProduct = null;
+			Object.keys(sessions).forEach(k => {
+				if (sessions[k].seller != null) {
+				// Yep, got it!
+				for(var i=0; i < sessions[k].seller.list.length; i++){
+					if(sessions[k].seller.list[i].name == product){
+						if(sessions[k].seller.list[i].amount >= load){
+							theProduct = sessions[k];
+							sessions[k].seller.list[i].amount -= load;
+						}
+					}
+				}
+			}
+			});
+			if(theProduct){
+				if(sessions[sessionId].buyer != null){
+					//add order to list of orders
+					var temp = {
+						start: theProduct.location,
+						name: product,
+						amount: load,
+						end: sessions[sessionId].location
+					}
+					sessions[sessionId].buyer.orders.push(temp);
+				}else{
+					if(sessions[sessionId].seller == null && sessions[sessionId].deliverer != null){
+						sessions[sessionId].buyer = {
+							orders: [
+								{
+									start: theProduct.location,
+									name: product,
+									amount: load,
+									end: sessions[sessionId].location
+								}
+							]
+						}
+					}else{
+						delete context.success;
+						context.fail = true;
+					}
+				}
+			}else{
+				delete context.success;
+				context.fail = true;
+			}
+
+			return resolve(context);
+		});
+	},
+	verifyAddress({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var loc = firstEntityValue(entities, 'location')
+			sessions[sessionId].location = loc;
+
+			return resolve(context);
+		});
+	},
+	delivererInfo({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var load = parseFloat(firstEntityValue(entities, 'load'))
+			var measurement = firstEntityValue(entities, 'measurement')
+			if(measurement){
+				if(measurement == "Kilograms"){
+					sessions[sessionId].deliverer.capacity = load;
+				}
+				if(measurement == "Pounds"){
+					sessions[sessionId].deliverer.capacity = load;
+				}
+				if(measurement == "Tons"){
+					sessions[sessionId].deliverer.capacity = load;
+				}
+				if(measurement == "Cartons"){
+					sessions[sessionId].deliverer.capacity = load;
+				}
+				if(measurement == "Miles"){
+					sessions[sessionId].deliverer.range = load;
+				}
+				if(measurement == "Kilometer"){
+					sessions[sessionId].deliverer.range = load;
+				}
+				delete context.fail;
+				context.success = true;
+			}else{
+				delete context.success;
+				context.fail = true;
+			}
+			sessions[sessionId].location = loc;
+
+			return resolve(context);
+		});
+	},
   getItem({sessionId, context, entities}) {
 	  //item = type
 	  /*var blacklist = sessions[sessionId].fbid;//308115649579044 -  should not take results from this fbid because it's us.

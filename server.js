@@ -22,6 +22,7 @@ var jsonQuery = require('json-query');
 var schedule = require('node-schedule');
 var http = require('http');
 var https = require('https');
+var twilio = require('twilio');
 
 let Wit = null;
 let log = null;
@@ -96,18 +97,18 @@ function callSendAPI(messageData) {
       var recipientId = body.recipient_id;
       var messageId = body.message_id;
 
-      console.log("Successfully sent generic message with id %s to recipient %s", 
+      console.log("Successfully sent generic message with id %s to recipient %s",
         messageId, recipientId);
     } else {
       console.error("Unable to send Genericmessage.");
       console.error(response);
       console.error(error);
     }
-  });  
+  });
 }
 
 // ----------------------------------------------------------------------------
-// Consensus API specific code 
+// Consensus API specific code
 
 // See the POS API reference on Confluence
 // You can put all new connections to Consensus APIs over here
@@ -122,6 +123,8 @@ function callSendAPI(messageData) {
 // This will contain all user sessions.
 // Each session has an entry:
 // sessionId -> {fbid: facebookUserId, context: sessionState, numItems: ItemsInCart, type: TypeOfItemsInList, list: jsonQueryOfItems, cart: ArrayOfItemsInPreviousCart}
+
+//Set this up to put session as a user db table on mongodb
 const sessions = {};
 
 const findOrCreateSession = (fbid) => {
@@ -137,9 +140,9 @@ const findOrCreateSession = (fbid) => {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString();
     sessions[sessionId] = {
-		fbid: fbid, 
+		fbid: fbid,
 		context: {
-		
+
 		},
 		name: "Pranav Jain",
 		seller: null,
@@ -286,7 +289,8 @@ const actions = {
 					sessions[sessionId].seller.list.push(temp);
 				}
 			}else{
-				if(sessions[sessionId].buyer == null && sessions[sessionId].deliverer == null){
+        //sessions[sessionId].buyer == null && sessions[sessionId].deliverer == null
+				if(true){
 					delete context.success;
 					context.successNew = true;
 					sessions[sessionId].seller = {
@@ -306,7 +310,7 @@ const actions = {
 			}else{
 				delete context.fail;
 			}
-			
+
 			console.log("Context: " + JSON.stringify(context));
 			return resolve(context);
 		});
@@ -354,7 +358,9 @@ const actions = {
 					context.success = true;
 				}else{
 					console.log(JSON.stringify(sessions[sessionId]));
-					if(sessions[sessionId].seller == null && sessions[sessionId].deliverer == null){
+          //todo: get rid of this bottom part to make it so that sellers can be buyers and vice versa.
+          //sessions[sessionId].seller == null && sessions[sessionId].deliverer == null
+					if(true){
 						sessions[sessionId].buyer = {
 							orders: [
 								{
@@ -369,13 +375,13 @@ const actions = {
 						delete context.fail;
 						context.success = true;
 					}else{
-						console.log("OWFNPONFPWNFOWP:FEN");
+						console.log("Failed because user is currently a seller or deliverer...");
 						delete context.success;
 						context.fail = true;
 					}
 				}
 			}else{
-				console.log("Everything failed.")
+				console.log("Everything failed. Never found theProduct");
 				delete context.success;
 				context.fail = true;
 			}
@@ -400,7 +406,7 @@ const actions = {
 	complete({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			
+
 			context.complete = true;
 			return resolve(context);
 		});
@@ -461,7 +467,7 @@ const actions = {
 	  var type = firstEntityValue(entities, 'item')
 	  //havent set up color yet on wit.ai
 	  var color = firstEntityValue(entities, 'color')
-	  
+
 	  const recipientId = sessions[sessionId].fbid;
 	  console.log("Parameter: " + parameter + "\nType: " + type + "\nBrand: " + brand);
 	  var list = sessions[sessionId].list;
@@ -512,7 +518,7 @@ const actions = {
 				delete context.weDontHave;
 				context.item = namelist;
 			}
- 
+
 	  }else{
 		  //otherwise we need to create a new list for us to mess around with
 		  //we need a type to get started
@@ -531,7 +537,7 @@ const actions = {
 			}else{
 				//dont need missingItem anymore
 				delete context.missingItem;
-				//call method to set session's new list and return list of items 
+				//call method to set session's new list and return list of items
 				list = search(list, sessionId, type, parameter, brand, color);
 				//format speech correctly
 				var namelist = "";
@@ -623,6 +629,55 @@ app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
 });
 
+//message handler for twilio
+app.post('/twilio', function (req, res) {
+	var text = req.body.Body; //message from twilio to send to Wit.
+	var twimlResp = new twilio.TwimlResponse();
+	
+	console.log("\n\n Test: " + text);
+	
+	// We retrieve the user's current session, or create one if it doesn't exist
+	// This is needed for our bot to figure out the conversation history
+	//figure out how to fix sender to be twilio only
+	const sender = "308115649579045";
+	const sessionId = findOrCreateSession(sender);
+	if(text){
+		// We received a text message
+			
+        // Let's forward the message to the Wit.ai Bot Engine
+        // This will run all actions until our bot has nothing left to do
+        wit.runActions(
+			sessionId, // the user's current session
+			text, // the user's message
+			sessions[sessionId].context // the user's current session state
+        ).then((context) => {
+			// Our bot did everything it has to do.
+			// Now it's waiting for further messages to proceed.
+			console.log('Waiting for next user messages');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message(sessions[sessionId].message);
+			res.send(twimlResp.toString());
+			// Based on the session state, you might want to reset the session.
+			// This depends heavily on the business logic of your bot.
+			// Example:
+			// if (context['done']) {
+			//   delete sessions[sessionId];
+			// }
+			
+			//Our logic is: if we have had success, failure, a final item, or we updated cart...
+			//reset the context
+			console.log("Context: " + JSON.stringify(context));
+			if(context.number || context.failure || context.item || context.success){
+				context = {};
+			}
+			// Updating the user's current session state
+			sessions[sessionId].context = context;
+        })
+        .catch((err) => {
+			console.error('Oops! Got an error from Wit: ', err.stack || err);
+        })
+	}
+});
 
 // Message handler for Facebook Messenger
 app.post('/webhook', (req, res) => {
@@ -633,7 +688,7 @@ app.post('/webhook', (req, res) => {
 	console.log("GOT SOMETHING!!!!!!");
 	//const info = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress;
 	//console.log("FB ip address: " + info);
-	
+
   if (data.object === 'page') {
     data.entry.forEach(entry => {
       entry.messaging.forEach(event => {
@@ -661,7 +716,7 @@ app.post('/webhook', (req, res) => {
             .catch(console.error);
           } else if (text) {
             // We received a text message
-			
+
             // Let's forward the message to the Wit.ai Bot Engine
             // This will run all actions until our bot has nothing left to do
             wit.runActions(
@@ -679,30 +734,30 @@ app.post('/webhook', (req, res) => {
               // if (context['done']) {
               //   delete sessions[sessionId];
               // }
-              
-              
+
+
               //Our logic is: if we have had success, failure, a final item, or we updated cart...
-			//reset the context
-			console.log("Test")
+			           //reset the context
+			              console.log("Test")
               console.log("Context: " + JSON.stringify(context));
-			  if(context.complete){
-				  context = {};
-			  }
+			        if(context.complete){
+				            context = {};
+			        }
               // Updating the user's current session state
               sessions[sessionId].context = context;
             })
             .catch((err) => {
-              console.error('Oops! Got an error from Wit1: ', err.stack || err);
+              console.error('Oops! Got an error from Wit: ', err.stack || err);
             })
           }
         } else {
           console.log('received event', JSON.stringify(event));
           //this is where you handle the call for postback need to also make sure that when facebook pings you, you still respond with 200.
           var test = event.postback;
-          
+
           //console.log("test is: " + test);
           if(event.postback){
-			  
+
 		  }
         }
       });

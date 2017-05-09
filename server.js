@@ -639,7 +639,7 @@ app.get('/', function (req, res) {
 app.post('/twilio', function (req, res) {
 	var text = req.body.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
-	console.log(req.body);
+	console.log(req);
 	console.log("\n\n Test: " + text);
 	
 	// We retrieve the user's current session, or create one if it doesn't exist

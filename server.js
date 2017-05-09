@@ -686,7 +686,7 @@ app.post('/twilio', function (req, res) {
 			console.log('Failed to read text from twilio!!!');
 			res.writeHead(200, {'Content-Type': 'text/xml'});
 			twimlResp.message("Could not read your text.");
-			res.send(twimlResp.toString());
+			res.end(twimlResp.toString());
 	}
 });
 

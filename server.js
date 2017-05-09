@@ -682,6 +682,11 @@ app.post('/twilio', function (req, res) {
         .catch((err) => {
 			console.error('Oops! Got an error from Wit: ', err.stack || err);
         })
+	}else{
+			console.log('Failed to read text from twilio!!!');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message("Could not read your text.");
+			res.send(twimlResp.toString());
 	}
 });
 

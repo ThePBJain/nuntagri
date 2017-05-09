@@ -23,6 +23,7 @@ var schedule = require('node-schedule');
 var http = require('http');
 var https = require('https');
 var twilio = require('twilio');
+const MessagingResponse = require('twilio').twiml.MessagingResponse;
 //twilio specific
 var accountSid = 'AC8501e05ec858043aaed043218ad665fb'; // Your Account SID from www.twilio.com/console
 var authToken = 'f3f5184f0b84ad7ce383b62b134050a0';   // Your Auth Token from www.twilio.com/console
@@ -637,7 +638,7 @@ app.get('/', function (req, res) {
 //message handler for twilio
 app.post('/twilio', function (req, res) {
 	var text = req.body.Body; //message from twilio to send to Wit.
-	var twimlResp = new twilio.TwimlResponse();
+	const twimlResp = new MessagingResponse();
 	
 	console.log("\n\n Test: " + text);
 	

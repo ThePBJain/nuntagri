@@ -208,7 +208,7 @@ const actions = {
 		// Yay, we found our recipient!
 		// Let's forward our bot response to her.
 		// We return a promise to let our bot know when we're done sending
-		if(recipientId == "308115649579045"){
+		if(recipientId.substring(0,6) == "100011"){
 			sessions[sessionId].message = text;
 			return Promise.resolve()
 			/*.then(() => null)
@@ -654,13 +654,13 @@ app.get('/sms', (req, res) => {
 });
 
 //message handler for twilio
-app.post('/twilio', function (req, res) {
-	var text = req.body.Body; //message from twilio to send to Wit.
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
+//find a way to fix that so we dont have this issue.
+app.get('/twilio', function (req, res) {
+	var text = req.query.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
 	//console.log(req);
 	console.log("\n\n Test: " + text);
-	console.log("\n Body: " + JSON.stringify(req.body));
-	console.log("\n Params:" + JSON.stringify(req.params));
 	console.log("\n Query:" + JSON.stringify(req.query));
 	if (req.body.Body == 'hello') {
     	console.log("WE OUT HERE WINNING!!!!");
@@ -668,7 +668,10 @@ app.post('/twilio', function (req, res) {
 	// We retrieve the user's current session, or create one if it doesn't exist
 	// This is needed for our bot to figure out the conversation history
 	//figure out how to fix sender to be twilio only
-	const sender = "308115649579045";
+	var sender = req.query.From;
+			// binary for #
+	sender = "100011" + sender.substring(1);
+	console.log("Sender: " + sender);
 	const sessionId = findOrCreateSession(sender);
 	if(text){
 		// We received a text message

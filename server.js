@@ -688,7 +688,7 @@ app.get('/twilio', function (req, res) {
 			console.log('Waiting for next user messages');
 			res.writeHead(200, {'Content-Type': 'text/xml'});
 			twimlResp.message(sessions[sessionId].message);
-			res.send(twimlResp.toString());
+			res.end(twimlResp.toString());
 			// Based on the session state, you might want to reset the session.
 			// This depends heavily on the business logic of your bot.
 			// Example:

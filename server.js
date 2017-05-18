@@ -634,24 +634,6 @@ app.get('/webhook', (req, res) => {
 app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
 });
-//testing twilio
-app.get('/sms', (req, res) => {
-  const twiml = new MessagingResponse();
-  console.log("\n Body: " + JSON.stringify(req.body));
-  console.log("\n Params:" + JSON.stringify(req.params));
-  console.log("\n Query:" + JSON.stringify(req.query));
-  if (req.body.Body == 'hello') {
-    twiml.message('Hi!');
-  } else if(req.body.Body == 'bye') {
-    twiml.message('Goodbye');
-  } else {
-    twiml.message('No Body param match, Twilio sends this in the request to your server.');
-  }
-  console.log(req.body.Body);
-
-  res.writeHead(200, {'Content-Type': 'text/xml'});
-  res.end(twiml.toString());
-});
 
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
@@ -661,7 +643,7 @@ app.get('/twilio', function (req, res) {
 	const twimlResp = new MessagingResponse();
 	//console.log(req);
 	console.log("\n\n Test: " + text);
-	console.log("\n Query:" + JSON.stringify(req.query));
+	//console.log("\n Query:" + JSON.stringify(req.query));
 	if (req.body.Body == 'hello') {
     	console.log("WE OUT HERE WINNING!!!!");
   	}
@@ -699,7 +681,7 @@ app.get('/twilio', function (req, res) {
 			//Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
 			console.log("Context: " + JSON.stringify(context));
-			if(context.number || context.failure || context.item || context.success){
+			if(context.complete){
 				context = {};
 			}
 			// Updating the user's current session state

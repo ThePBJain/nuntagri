@@ -641,9 +641,9 @@ app.post('/twilio', function (req, res) {
 	const twimlResp = new MessagingResponse();
 	console.log(req);
 	console.log("\n\n Test: " + text);
-	console.log("\n Body: " + req.body);
-	console.log("\n Params:" + req.params);
-	console.log("\n Query:" + rreq.query);
+	console.log("\n Body: " + JSON.stringify(req.body));
+	console.log("\n Params:" + JSON.stringify(req.params));
+	console.log("\n Query:" + JSON.stringify(req.query));
 	// We retrieve the user's current session, or create one if it doesn't exist
 	// This is needed for our bot to figure out the conversation history
 	//figure out how to fix sender to be twilio only

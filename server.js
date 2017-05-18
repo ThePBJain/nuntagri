@@ -635,11 +635,11 @@ app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
 });
 //testing twilio
-app.post('/sms', (req, res) => {
+app.get('/sms', (req, res) => {
   const twiml = new MessagingResponse();
-  if(req.body){
-  	console.log(req.body);
-  }
+  console.log("\n Body: " + JSON.stringify(req.body));
+  console.log("\n Params:" + JSON.stringify(req.params));
+  console.log("\n Query:" + JSON.stringify(req.query));
   if (req.body.Body == 'hello') {
     twiml.message('Hi!');
   } else if(req.body.Body == 'bye') {
@@ -814,6 +814,7 @@ function verifyRequestSignature(req, res, buf) {
   if (!signature) {
     // For testing, let's log an error. In production, you should throw an
     // error.
+    console.log("We are checking security in here");
     console.error("Couldn't validate the signature.");
   } else {
     var elements = signature.split('=');

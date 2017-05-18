@@ -634,6 +634,22 @@ app.get('/webhook', (req, res) => {
 app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
 });
+//testing twilio
+app.post('/sms', (req, res) => {
+  const twiml = new MessagingResponse();
+
+  if (req.body.Body == 'hello') {
+    twiml.message('Hi!');
+  } else if(req.body.Body == 'bye') {
+    twiml.message('Goodbye');
+  } else {
+    twiml.message('No Body param match, Twilio sends this in the request to your server.');
+  }
+  console.log(req.body.Body);
+
+  res.writeHead(200, {'Content-Type': 'text/xml'});
+  res.end(twiml.toString());
+});
 
 //message handler for twilio
 app.post('/twilio', function (req, res) {

@@ -637,7 +637,9 @@ app.get('/', function (req, res) {
 //testing twilio
 app.post('/sms', (req, res) => {
   const twiml = new MessagingResponse();
-
+  if(req.body){
+  	console.log(req.body);
+  }
   if (req.body.Body == 'hello') {
     twiml.message('Hi!');
   } else if(req.body.Body == 'bye') {

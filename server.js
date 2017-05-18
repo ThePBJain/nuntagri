@@ -639,11 +639,14 @@ app.get('/', function (req, res) {
 app.post('/twilio', function (req, res) {
 	var text = req.body.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
-	console.log(req);
+	//console.log(req);
 	console.log("\n\n Test: " + text);
 	console.log("\n Body: " + JSON.stringify(req.body));
 	console.log("\n Params:" + JSON.stringify(req.params));
 	console.log("\n Query:" + JSON.stringify(req.query));
+	if (req.body.Body == 'hello') {
+    	console.log("WE OUT HERE WINNING!!!!");
+  	}
 	// We retrieve the user's current session, or create one if it doesn't exist
 	// This is needed for our bot to figure out the conversation history
 	//figure out how to fix sender to be twilio only

@@ -434,7 +434,7 @@ const actions = {
 				
 				sessions[sessionId].items = items;
 				
-				if(sessions[sessionId].location){
+				if(!sessions[sessionId].location){
 					delete context.missingWhen;
 					context.missingAddress = true; 
 				}else{
@@ -467,7 +467,7 @@ const actions = {
 				//this is the number you are eventually sending it to: +17176483389
 				client.messages
   				.create({
-    				to: '+15105799664',
+    				to: '+17173297650',
     				from: '+16506811972',
     				body: message
   				})

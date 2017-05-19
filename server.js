@@ -47,7 +47,7 @@ const PORT = 443;
 
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;
-
+const WIT_JUNK_TOKEN = "ZZ5JYCM2HVOXHDE2ULJM5H2SGPX7WUNC";
 // Messenger API parameters
 const FB_PAGE_ID = process.env.FB_PAGE_ID;
 if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
@@ -146,7 +146,7 @@ const findOrCreateSession = (fbid) => {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString();
     sessions[sessionId] = {
-		fbid: fbid,
+		fbid: fbid, // phone number for sms users
 		context: {
 
 		},
@@ -154,6 +154,7 @@ const findOrCreateSession = (fbid) => {
 		seller: null,
 		buyer: null,
 		deliverer: null,
+		items: null, //will be an array for junk hauling
 		location: null
 	};
   }
@@ -198,6 +199,7 @@ const selectDeliverers = (order, sessionId) => {
 //-----------------------------------------------------------------
 // Our bot actions
 // Write new actions over here that will be called by Wit.ai stories
+//todo: delete success and fail context markers in beginning of each attempt
 const actions = {
   send({sessionId}, {text}) {
     // Our bot has something to say!
@@ -256,7 +258,7 @@ const actions = {
     });
   },
 	parseProducts({sessionId, context, entities}) {
-		//used only for demo to find cart that addToCart method will send it too.
+		//used for selling
 		return new Promise(function(resolve, reject) {
 			//parse
 			var measurement = firstEntityValue(entities, 'measurement');
@@ -282,6 +284,7 @@ const actions = {
 
 			if(sessions[sessionId].seller != null){
 				delete context.successNew;
+				console.log("Found old seller profile");
 				context.success = true;
 				var temp = {name: product, amount: load};
 				var didUpdate = false;
@@ -316,6 +319,7 @@ const actions = {
 			}else{
 				delete context.fail;
 			}
+			//for some reason its still saying "I am unable to process your request at this time." for context.success = true
 
 			console.log("Context: " + JSON.stringify(context));
 			return resolve(context);
@@ -417,6 +421,66 @@ const actions = {
 			return resolve(context);
 		});
 	},
+	items({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var items = firstEntityValue(entities, 'item');
+			if(context.fail){
+				delete context.fail;
+			}
+			console.log("Items: " + items);
+			if(items){
+				delete context.fail;
+				
+				sessions[sessionId].items = items;
+				
+				if(sessions[sessionId].location){
+					delete context.missingWhen;
+					context.missingAddress = true; 
+				}else{
+					delete context.missingAddress;
+					context.missingWhen = true;
+				}
+			}else{
+				delete context.missingAddress;
+				delete context.missingWhen;
+				context.fail = true;
+			}
+			return resolve(context);
+		});
+	},
+	junkOrder({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var dayTime = firstEntityValue(entities, 'datetime');
+			if(context.fail){
+				delete context.fail;
+			}
+			console.log("dateTime: " + dayTime);
+			if(dayTime){
+				delete context.fail;
+				//finish order here...
+				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+													"\nAddress: " + sessions[sessionId].location +
+													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+				//this is the number you are eventually sending it to: +17176483389
+				client.messages
+  				.create({
+    				to: '+15105799664',
+    				from: '+16506811972',
+    				body: message
+  				})
+  				.then((message) => console.log(message.sid));
+				delete context.fail;
+				context.success = true;
+			}else{
+				delete context.success;
+				context.fail = true;
+			}
+			return resolve(context);
+		});
+	},
 	delivererInfo({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
@@ -458,147 +522,6 @@ const actions = {
 			return resolve(context);
 		});
 	},
-  getItem({sessionId, context, entities}) {
-	  //item = type
-	  /*var blacklist = sessions[sessionId].fbid;//308115649579044 -  should not take results from this fbid because it's us.
-	  if(blacklist == "308115649579044"){
-		  console.log("got request from self");
-		  return Promise.resolve()
-	  }*/
-    return new Promise(function(resolve, reject) {
-	  var fs = require('fs');
-	  var data = JSON.parse(fs.readFileSync('catalog.json', 'utf8'));
-	  var parameter = firstEntityValue(entities, 'search_query')
-	  var brand = firstEntityValue(entities, 'brand')
-	  var type = firstEntityValue(entities, 'item')
-	  //havent set up color yet on wit.ai
-	  var color = firstEntityValue(entities, 'color')
-
-	  const recipientId = sessions[sessionId].fbid;
-	  console.log("Parameter: " + parameter + "\nType: " + type + "\nBrand: " + brand);
-	  var list = sessions[sessionId].list;
-	  //if we find list in the session (i.e old list)
-	  if(list){
-			delete context.missingItem;
-			//write code here
-			console.log("We found the old list!!");
-			list = search(list, sessionId, type, parameter, brand, color);
-			var namelist = "";
-			if(list.length > 1){
-				for(var i=0; i < list.length-1; i++){
-					namelist += (list[i] + ", ");
-				}
-				namelist += "and " + list[list.length-1];
-			}else if(list.length == 1){
-				namelist = list[0];
-			}
-			//resolve context and return items;
-			if(list.length > 3){
-				//when 3 or more, use brand names to simplify message
-				type = sessions[sessionId].type;
-				var names = getBrandNames(type, sessionId);
-				delete context.item;
-				delete context.weDontHave;
-				context.items = names;
-			}else if(list.length > 1){
-				//when more than one but less than 3
-				delete context.item;
-				delete context.weDontHave;
-				sendGenericMessage(sessionId);
-				context.items = namelist;
-			}else if(list.length == 0){
-				sessions[sessionId].list = null;
-				sessions[sessionId].type = null;
-				context.weDontHave = true;
-				delete context.item;
-				delete context.items;
-			}else{
-				//this senario, finish and delete the session/context.
-				addToSessionCart(sessionId);
-				var index = sessions[sessionId].cart.length;
-				var flag = (recipientId != "308115649579045");
-				addToCart(sessionId, index-1, flag);
-				sessions[sessionId].list = null;
-				sessions[sessionId].type = null;
-				delete context.items;
-				delete context.weDontHave;
-				context.item = namelist;
-			}
-
-	  }else{
-		  //otherwise we need to create a new list for us to mess around with
-		  //we need a type to get started
-		if (type) {
-			delete context.missingItem;
-			//resolve type
-			var list = jsonQuery('Category.Sub-Category.Type[*name~/'+type+'/i]', {
-				data: data,
-				allowRegexp: true
-			}).value;
-			if(list.length == 0){
-				context.missingItem = true;
-				delete context.item;
-				delete context.weDontHave;
-				delete context.items;
-			}else{
-				//dont need missingItem anymore
-				delete context.missingItem;
-				//call method to set session's new list and return list of items
-				list = search(list, sessionId, type, parameter, brand, color);
-				//format speech correctly
-				var namelist = "";
-				if(list.length > 1){
-					for(var i=0; i < list.length-1; i++){
-						namelist += (list[i] + ", ");
-					}
-					namelist += "and " + list[list.length-1];
-				}else if(list.length == 1){
-					namelist = list[0];
-				}
-				//resolve context and return items;
-				if(list.length > 3){
-					//when 6 or more, use brand names to simplify       **WARNING** This part could fail if list contains different Types b/c type is unknown...
-					type = sessions[sessionId].type;
-					var names = getBrandNames(type, sessionId);
-					delete context.item;
-					delete context.weDontHave;
-					context.items = names;
-				}else if(list.length > 1){
-					//when more than one but less than 6
-					delete context.item;
-					delete context.weDontHave;
-					sendGenericMessage(sessionId);
-					context.items = namelist;
-				}else if(list.length == 0){
-					sessions[sessionId].list = null;
-					sessions[sessionId].type = null;
-					context.weDontHave = true;
-					delete context.item;
-					delete context.items;
-				}else{
-					//this senario, finish and delete the session.
-					addToSessionCart(sessionId);
-					var index = sessions[sessionId].cart.length;
-					var flag = (recipientId != "308115649579045");
-					addToCart(sessionId, index-1, flag);
-					sendGenericMessage(sessionId);
-					sessions[sessionId].list = null;
-					sessions[sessionId].type = null;
-					delete context.items;
-					delete context.weDontHave;
-					context.item = namelist;
-				}
-			}
-		} else {
-			context.missingItem = true;
-			delete context.weDontHave;
-			delete context.item;
-			delete context.items;
-		}
-	  }
-      return resolve(context);
-    });
-  },
   // You should implement your custom actions here
   // See https://wit.ai/docs/quickstart
 };
@@ -606,6 +529,13 @@ const actions = {
 // Setting up our bot
 const wit = new Wit({
   accessToken: WIT_TOKEN,
+  actions,
+  logger: new log.Logger(log.INFO)
+});
+
+//setting up Junk Bot
+const witJunk = new Wit({
+  accessToken: WIT_JUNK_TOKEN,
   actions,
   logger: new log.Logger(log.INFO)
 });
@@ -661,6 +591,66 @@ app.get('/twilio', function (req, res) {
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
         wit.runActions(
+			sessionId, // the user's current session
+			text, // the user's message
+			sessions[sessionId].context // the user's current session state
+        ).then((context) => {
+			// Our bot did everything it has to do.
+			// Now it's waiting for further messages to proceed.
+			console.log('Waiting for next user messages');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message(sessions[sessionId].message);
+			res.end(twimlResp.toString());
+			// Based on the session state, you might want to reset the session.
+			// This depends heavily on the business logic of your bot.
+			// Example:
+			// if (context['done']) {
+			//   delete sessions[sessionId];
+			// }
+			
+			//Our logic is: if we have had success, failure, a final item, or we updated cart...
+			//reset the context
+			console.log("Context: " + JSON.stringify(context));
+			if(context.complete){
+				context = {};
+			}
+			// Updating the user's current session state
+			sessions[sessionId].context = context;
+        })
+        .catch((err) => {
+			console.error('Oops! Got an error from Wit: ', err.stack || err);
+        })
+	}else{
+			console.log('Failed to read text from twilio!!!');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message("Could not read your text.");
+			res.end(twimlResp.toString());
+	}
+});
+
+//message handler for twilio
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
+//find a way to fix that so we dont have this issue.
+app.get('/junkTwilio', function (req, res) {
+	var text = req.query.Body; //message from twilio to send to Wit.
+	const twimlResp = new MessagingResponse();
+	//console.log(req);
+	console.log("\n\n Test: " + text);
+	//console.log("\n Query:" + JSON.stringify(req.query));
+	// We retrieve the user's current session, or create one if it doesn't exist
+	// This is needed for our bot to figure out the conversation history
+	//figure out how to fix sender to be twilio only
+	var sender = req.query.From;
+			// binary for #
+	sender = "100011" + sender.substring(1);
+	console.log("Sender: " + sender);
+	const sessionId = findOrCreateSession(sender);
+	if(text){
+		// We received a text message
+			
+        // Let's forward the message to the Wit.ai Bot Engine
+        // This will run all actions until our bot has nothing left to do
+        witJunk.runActions(
 			sessionId, // the user's current session
 			text, // the user's message
 			sessions[sessionId].context // the user's current session state

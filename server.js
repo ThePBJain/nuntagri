@@ -179,20 +179,64 @@ const firstEntityValue = (entities, entity) => {
 
 
 //search method to search through the catalog.json and get items
+/*
+	Queue will look like this
+	queue: [
+		{
+			start: seller location,
+			name: product,
+			amount: load,
+			end: buyer location
+		}
+	],
+*/
 const selectDeliverers = (order, sessionId) => {
 	var bestdeliverer = null;
 	var closest = 10000;
+	var bestK = null;
 	Object.keys(sessions).forEach(k => {
 		if (sessions[k].deliverer != null) {
-		// Yep, got it!
-		var deliverer = sessions[k].deliverer;
-		if(deliverer.capacity >= order.amount){
-			bestdeliverer = deliverer;
-		}
+			// Yep, got it!
+			var deliverer = sessions[k].deliverer;
+			//algo to find best driver goes here.
+			if(deliverer.capacity >= order.amount){
+				bestdeliverer = deliverer;
+				bestK = k;
+			}
 	}
-	bestdeliverer.queue.push(order);
+	
 	});
-
+	var isEmpty = bestdeliverer.queue < 1;
+	
+	//if it is empty start queue movement after pushing order in.
+	bestdeliverer.queue.push(order);
+	sessions[bestK].context.deliverer = true;
+	if(isEmpty){
+		//send message to deliverer & set context
+		//check if bestdeliverer is facebook or text
+		if(sessions[bestK].fbid.substring(0,6) == "100011"){
+			//sms twilio
+			var phone = "+" + (sessions[bestK].fbid).substring(6);
+			var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
+													"\nAddress: " + bestdeliverer.queue[0].start +
+													"\nContact at: " + sessions[sessionId].fbid;
+			client.messages
+  				.create({
+    				to: phone,
+    				from: '+16506811972',
+    				body: message
+  				})
+  				.then((message) => console.log(message.sid));
+		}else{
+			//facebook
+			var sender = sessions[bestK].fbid;
+			var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
+													"\nAddress: " + bestdeliverer.queue[0].start +
+													"\nContact at: " + sessions[sessionId].fbid;
+			fbMessage(sender, message);
+		}
+		
+	}
 
 
 };
@@ -473,7 +517,42 @@ const actions = {
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.success = true;
+				context.success = sessions[sessionId].location;
+			}else{
+				delete context.success;
+				context.fail = true;
+			}
+			return resolve(context);
+		});
+	},
+	delivererJob({sessionId, context, entities}) {
+		//todo: finish writing this so it works and understands which leg it's on (to seller or to buyer)
+		//todo: set up verify function to verify by driver and buyer that item has been delivered...
+		return new Promise(function(resolve, reject) {
+			//var dayTime = firstEntityValue(entities, 'datetime');
+			var dayTime = true //this doesn't need to be here, whatever entities we need will be in place here instead.e
+			if(context.fail){
+				delete context.fail;
+			}
+			console.log("dateTime: " + dayTime);
+			if(dayTime){//change this depending on what entities we will need
+				delete context.fail;
+				//finish order here... do fbmessage or sms depending on their fbid "100011"
+				//fbMessage(sender, 'Added item to cart #' + CART);
+				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+													"\nAddress: " + sessions[sessionId].location +
+													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+				//this is the number you are eventually sending it to: +17176483389
+				client.messages
+  				.create({
+    				to: '+17173297650',
+    				from: '+16506811972',
+    				body: message
+  				})
+  				.then((message) => console.log(message.sid));
+				delete context.fail;
+				context.success = sessions[sessionId].location;
 			}else{
 				delete context.success;
 				context.fail = true;

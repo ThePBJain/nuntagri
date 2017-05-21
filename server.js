@@ -508,10 +508,10 @@ const actions = {
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
-				//this is the number you are eventually sending it to: +17176483389
+				//this is the number you are eventually sending it to: +17173154479
 				client.messages
   				.create({
-    				to: '+17173297650',
+    				to: '+17173154479',
     				from: '+16506811972',
     				body: message
   				})

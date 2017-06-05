@@ -1,7 +1,7 @@
 {
-  "name": "fbbot",
-  "version": "1.0.0",
-  "description": "Node.js of Fb Messenger app",
+  "name": "NuntAgri",
+  "version": "1.0.1",
+  "description": "Node.js of NuntAgri platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -9,7 +9,7 @@
   "engines": {
     "node": "6.2.2"
   },
-  "author": "Pranav Jain <Pranav.Jain@Consensuscorp.com>",
+  "author": "Pranav Jain <pranajain@gmail.com>",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.15.2",

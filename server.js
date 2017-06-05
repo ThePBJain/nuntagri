@@ -29,6 +29,29 @@ var accountSid = 'AC8501e05ec858043aaed043218ad665fb'; // Your Account SID from 
 var authToken = 'f3f5184f0b84ad7ce383b62b134050a0';   // Your Auth Token from www.twilio.com/console
 var client = new twilio(accountSid, authToken);
 
+//geocoder using OpenStreetMap
+var NodeGeocoder = require('node-geocoder');
+var options = {
+  provider: 'openstreetmap',
+ 
+  // Optional depending on the providers 
+  httpAdapter: 'https', // Default 
+  email: 'pranajain@gmail.com', // dunno
+  formatter: null         // 'gpx', 'string', ...
+};
+
+var geocoder = NodeGeocoder(options);
+
+/* //GEOCODER EXAMPLE
+	geocoder.geocode('Amsterdam, Noord-Holland, Netherlands')
+  		.then(function(res) {
+    		console.log(res);
+  		})
+  		.catch(function(err) {
+    		console.log(err);
+  		});
+*/
+
 //moving on...
 let Wit = null;
 let log = null;
@@ -448,7 +471,21 @@ const actions = {
 		return new Promise(function(resolve, reject) {
 			var loc = firstEntityValue(entities, 'location')
 			if(loc){
-			sessions[sessionId].location = loc;
+			geocoder.geocode(loc)
+  			.then(function(res) {
+    			console.log(res);
+    			if(res.length != 0){
+        			var location = {
+        				string: loc,
+        				latitude: res[0].latitude,
+        				longitude: res[0].longitude
+        			}
+        			sessions[sessionId].location = location;
+    			}
+    			sessions[sessionId].location = loc;
+  			}).catch(function(err) {
+    			console.log(err);
+  			});
 			}else{
 				sessions[sessionId].location = "246 Saint Phillip Ct.";
 			}

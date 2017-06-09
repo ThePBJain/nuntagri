@@ -20,6 +20,7 @@ const fetch = require('node-fetch');
 const request = require('request');
 var jsonQuery = require('json-query');
 var schedule = require('node-schedule');
+var dateFormat = require('dateformat');
 var http = require('http');
 var https = require('https');
 var twilio = require('twilio');
@@ -170,6 +171,7 @@ const findOrCreateSession = (fbid) => {
     sessionId = new Date().toISOString();
     sessions[sessionId] = {
 		fbid: fbid, // phone number for sms users
+		conversationTime: null,
 		context: {
 
 		},
@@ -540,6 +542,7 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
@@ -589,9 +592,9 @@ const actions = {
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.success = sessions[sessionId].location;
+				context.complete = sessions[sessionId].location;
 			}else{
-				delete context.success;
+				delete context.complete;
 				context.fail = true;
 			}
 			return resolve(context);
@@ -761,6 +764,20 @@ app.get('/junkTwilio', function (req, res) {
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
 	const sessionId = findOrCreateSession(sender);
+	
+	//check to reset context
+	//if conversationTime == null
+	if(!sessions[sessionId].conversationTime){
+		//new conversation
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
+		//new conversation if 10 minutes has elapsed
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}
 	if(text){
 		// We received a text message
 			

@@ -542,7 +542,8 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
-				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+				//"dddd, mmmm dS, yyyy, h:MM:ss TT"
+				var orderTime = dateFormat(dayTime);
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 

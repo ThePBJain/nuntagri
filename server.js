@@ -547,7 +547,7 @@ const actions = {
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location +
-													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+													"\nPhone Number: " + phone + "\nTime: " + orderTime;
 				
 				console.log(message);
 				//this is the number you are eventually sending it to: +17173154479

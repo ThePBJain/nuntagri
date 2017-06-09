@@ -483,17 +483,28 @@ const actions = {
         				longitude: res[0].longitude
         			}
         			sessions[sessionId].location = location;
+        			
+					delete context.fail;
+					context.success = true;
+					
+    			}else{
+    				delete context.success;
+					context.fail = true;
     			}
-    			sessions[sessionId].location = loc;
+    			//sessions[sessionId].location = loc;
+    			return resolve(context);
   			}).catch(function(err) {
     			console.log(err);
+    			delete context.success;
+				context.fail = true;
+				return resolve(context);
   			});
 			}else{
-				sessions[sessionId].location = "246 Saint Phillip Ct.";
+				console.log("Could not identify location from wit.ai");
+				delete context.success;
+				context.fail = true;
+				return resolve(context);
 			}
-			delete context.fail;
-			context.success = true;
-			return resolve(context);
 		});
 	},
 	complete({sessionId, context, entities}) {
@@ -542,8 +553,8 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
-				//"dddd, mmmm dS, yyyy, h:MM:ss TT"
-				var orderTime = dateFormat(dayTime);
+				//date is coming in wrong for some reason...
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
@@ -688,6 +699,7 @@ app.get('/webhook', (req, res) => {
 
 app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
+  //maybe get this to work with website
 });
 
 //message handler for twilio
@@ -774,16 +786,19 @@ app.get('/junkTwilio', function (req, res) {
 	//check to reset context
 	//if conversationTime == null
 	if(!sessions[sessionId].conversationTime){
+		console.log("Found no time");
 		//new conversation
 		sessions[sessionId].context = {};
 		//set time
 		sessions[sessionId].conversationTime = new Date();
 	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
 		//new conversation if 10 minutes has elapsed
+		console.log("Found that 10 minutes elapsed");
 		sessions[sessionId].context = {};
 		//set time
 		sessions[sessionId].conversationTime = new Date();
 	}
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000 );
 	if(text){
 		// We received a text message
 			

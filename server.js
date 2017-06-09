@@ -548,18 +548,21 @@ const actions = {
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+				
+				console.log(message);
 				//this is the number you are eventually sending it to: +17173154479
+				//Brandon: +17173297650
 				client.messages
   				.create({
-    				to: '+17173154479',
+    				to: '+17173297650',
     				from: '+16506811972',
     				body: message
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.success = sessions[sessionId].location;
+				context.complete = sessions[sessionId].location;
 			}else{
-				delete context.success;
+				delete context.complete;
 				context.fail = true;
 			}
 			return resolve(context);
@@ -583,6 +586,8 @@ const actions = {
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+													
+				console.log(message);
 				//this is the number you are eventually sending it to: +17176483389
 				client.messages
   				.create({
@@ -592,9 +597,9 @@ const actions = {
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.complete = sessions[sessionId].location;
+				context.success = sessions[sessionId].location;
 			}else{
-				delete context.complete;
+				delete context.success;
 				context.fail = true;
 			}
 			return resolve(context);

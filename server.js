@@ -799,7 +799,7 @@ app.get('/junkTwilio', function (req, res) {
 		sessions[sessionId].conversationTime = new Date();
 	}
 	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000 
-	 			+ "\nContext: " + sessions[sessionId].context);
+	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
 	if(text){
 		// We received a text message
 			

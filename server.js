@@ -175,12 +175,13 @@ const findOrCreateSession = (fbid) => {
 		context: {
 
 		},
-		name: "Pranav Jain",
+		name: "",
 		seller: null,
 		buyer: null,
 		deliverer: null,
 		items: null, //will be an array for junk hauling
-		location: null
+		location: null,
+		message: ""
 	};
   }
   return sessionId;
@@ -826,6 +827,7 @@ app.get('/junkTwilio', function (req, res) {
 			res.writeHead(200, {'Content-Type': 'text/xml'});
 			twimlResp.message(sessions[sessionId].message);
 			res.end(twimlResp.toString());
+			sessions[sessionId].message = "";
 			// Based on the session state, you might want to reset the session.
 			// This depends heavily on the business logic of your bot.
 			// Example:

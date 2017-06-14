@@ -781,7 +781,7 @@ app.get('/junkTwilio', function (req, res) {
 			// binary for #
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
-	const sessionId = findOrCreateSession(sender);
+	var sessionId = findOrCreateSession(sender);
 	
 	//check to reset context
 	//if conversationTime == null
@@ -794,7 +794,14 @@ app.get('/junkTwilio', function (req, res) {
 	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
 		//new conversation if 10 minutes has elapsed
 		console.log("Found that 10 minutes elapsed");
-		sessions[sessionId].context = {};
+		//testing deleting the entire session...
+		var temp = sessions[sessionId];
+		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
+		delete sessions[sessionId];
+		console.log("2. Sessions looks like: " + JSON.stringify(sessions));
+		sessionId = findOrCreateSession(sender);
+		console.log("3. Sessions looks like: " + JSON.stringify(sessions));
+		
 		//set time
 		sessions[sessionId].conversationTime = new Date();
 	}

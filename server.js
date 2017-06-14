@@ -785,7 +785,6 @@ app.get('/junkTwilio', function (req, res) {
 	
 	//check to reset context
 	//if conversationTime == null
-	console.log("1. Sessions looks like: " + JSON.stringify(sessions));
 	if(!sessions[sessionId].conversationTime){
 		console.log("Found no time");
 		//new conversation
@@ -796,12 +795,15 @@ app.get('/junkTwilio', function (req, res) {
 		//new conversation if 10 minutes has elapsed
 		console.log("Found that 10 minutes elapsed");
 		//testing deleting the entire session...
-		//var temp = sessions[sessionId];
-		//console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
-		//delete sessions[sessionId];
+		var temp = sessions[sessionId];
+		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
+		delete sessions[sessionId];
+		console.log("2. Sessions looks like: " + JSON.stringify(sessions));
+		sessionId = findOrCreateSession(sender);
+		console.log("3. Sessions looks like: " + JSON.stringify(sessions));
+		sessions[sessionId] = temp;
 		sessions[sessionId].context = {};
-		delete sessions[sessionId].message;
-		
+		console.log("4. Sessions looks like: " + JSON.stringify(sessions));
 		//set time
 		sessions[sessionId].conversationTime = new Date();
 	}
@@ -835,6 +837,8 @@ app.get('/junkTwilio', function (req, res) {
 			console.log("Context: " + JSON.stringify(context));
 			if(context.complete){
 				context = {};
+				//remove time
+				sessions[sessionId].conversationTime = null;
 			}
 			// Updating the user's current session state
 			sessions[sessionId].context = context;

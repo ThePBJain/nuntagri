@@ -785,7 +785,7 @@ app.get('/junkTwilio', function (req, res) {
 	
 	//check to reset context
 	//if conversationTime == null
-	console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
+	console.log("1. Sessions looks like: " + JSON.stringify(sessions));
 	if(!sessions[sessionId].conversationTime){
 		console.log("Found no time");
 		//new conversation

@@ -280,7 +280,7 @@ const actions = {
 		// Let's forward our bot response to her.
 		// We return a promise to let our bot know when we're done sending
 		if(recipientId.substring(0,6) == "100011"){
-			sessions[sessionId].message = text;
+			sessions[sessionId].message += ("\n" + text);
 			return Promise.resolve()
 			/*.then(() => null)
 			.catch((err) => {
@@ -558,7 +558,7 @@ const actions = {
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
-													"\nAddress: " + sessions[sessionId].location +
+													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + orderTime;
 				
 				console.log(message);
@@ -596,7 +596,7 @@ const actions = {
 				//fbMessage(sender, 'Added item to cart #' + CART);
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
-													"\nAddress: " + sessions[sessionId].location +
+													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
 													
 				console.log(message);
@@ -738,6 +738,7 @@ app.get('/twilio', function (req, res) {
 			res.writeHead(200, {'Content-Type': 'text/xml'});
 			twimlResp.message(sessions[sessionId].message);
 			res.end(twimlResp.toString());
+			sessions[sessionId].message = "";
 			// Based on the session state, you might want to reset the session.
 			// This depends heavily on the business logic of your bot.
 			// Example:
@@ -782,7 +783,7 @@ app.get('/junkTwilio', function (req, res) {
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
 	var sessionId = findOrCreateSession(sender);
-	
+	console.log("0. Sessions looks like: " + JSON.stringify(sessions));
 	//check to reset context
 	//if conversationTime == null
 	if(!sessions[sessionId].conversationTime){
@@ -791,7 +792,7 @@ app.get('/junkTwilio', function (req, res) {
 		sessions[sessionId].context = {};
 		//set time
 		sessions[sessionId].conversationTime = new Date();
-	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 1.0){
 		//new conversation if 10 minutes has elapsed
 		console.log("Found that 10 minutes elapsed");
 		//testing deleting the entire session...

@@ -613,7 +613,7 @@ const actions = {
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.success = sessions[sessionId].location;
+				context.success = phone;
 			}else{
 				delete context.success;
 				context.fail = true;

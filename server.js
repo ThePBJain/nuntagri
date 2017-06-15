@@ -489,8 +489,17 @@ const actions = {
 					context.success = true;
 					
     			}else{
-    				delete context.success;
-					context.fail = true;
+    				//should do this but will accept for now
+    				//delete context.success;
+					//context.fail = true;
+					var location = {
+        				string: loc,
+        				latitude: 0.0,
+        				longitude: 0.0
+        			}
+        			sessions[sessionId].location = location;
+        			delete context.fail;
+					context.success = true;
     			}
     			//sessions[sessionId].location = loc;
     			return resolve(context);
@@ -529,16 +538,10 @@ const actions = {
 				
 				sessions[sessionId].items = items;
 				
-				if(!sessions[sessionId].location){
-					delete context.missingWhen;
-					context.missingAddress = true; 
-				}else{
-					delete context.missingAddress;
-					context.missingWhen = true;
-				}
+				context.missingAddress = true; 
+				
 			}else{
 				delete context.missingAddress;
-				delete context.missingWhen;
 				context.fail = true;
 			}
 			return resolve(context);

@@ -576,7 +576,7 @@ const actions = {
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.complete = sessions[sessionId].location.string;
+				context.complete = phone;
 			}else{
 				delete context.complete;
 				context.fail = true;
@@ -613,7 +613,7 @@ const actions = {
   				})
   				.then((message) => console.log(message.sid));
 				delete context.fail;
-				context.success = phone;
+				context.success = sessions[sessionId].location;
 			}else{
 				delete context.success;
 				context.fail = true;

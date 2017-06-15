@@ -796,7 +796,7 @@ app.get('/junkTwilio', function (req, res) {
 		sessions[sessionId].context = {};
 		//set time
 		sessions[sessionId].conversationTime = new Date();
-	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 1.0){
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
 		//new conversation if 10 minutes has elapsed
 		console.log("Found that 10 minutes elapsed");
 		//testing deleting the entire session...

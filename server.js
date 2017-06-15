@@ -845,6 +845,11 @@ app.get('/junkTwilio', function (req, res) {
 				context = {};
 				//remove time
 				sessions[sessionId].conversationTime = null;
+				//deleting the entire session...
+				var temp = sessions[sessionId];
+				delete sessions[sessionId];
+				sessionId = findOrCreateSession(sender);
+				sessions[sessionId] = temp;
 			}
 			// Updating the user's current session state
 			sessions[sessionId].context = context;

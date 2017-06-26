@@ -181,6 +181,7 @@ const findOrCreateSession = (fbid) => {
 		deliverer: null,
 		items: null, //will be an array for junk hauling
 		location: null,
+		dateTime: null,
 		message: ""
 	};
   }
@@ -559,6 +560,43 @@ const actions = {
 				delete context.fail;
 				//date is coming in wrong for some reason...
 				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+				//finish order here...
+				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+													"\nAddress: " + sessions[sessionId].location.string +
+													"\nPhone Number: " + phone + "\nTime: " + orderTime;
+				
+				console.log(message);
+				//this is the number you are eventually sending it to: +17173154479
+				//Brandon: +17173297650
+				client.messages
+  				.create({
+    				to: '+17173297650',
+    				from: '+16506811972',
+    				body: message
+  				})
+  				.then((message) => console.log(message.sid));
+				delete context.fail;
+				context.complete = phone;
+			}else{
+				delete context.complete;
+				context.fail = true;
+			}
+			return resolve(context);
+		});
+	},
+	checkDateTime({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var dayTime = firstEntityValue(entities, 'datetime');
+			if(context.fail){
+				delete context.fail;
+			}
+			console.log("dateTime: " + dayTime);
+			if(dayTime){
+				delete context.fail;
+				//date is coming in wrong for some reason...
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, EST:h:MM:ss TT");
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 

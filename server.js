@@ -559,7 +559,7 @@ const actions = {
 			if(dayTime){
 				delete context.fail;
 				//date is coming in wrong for some reason...
-				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
@@ -597,24 +597,8 @@ const actions = {
 				delete context.fail;
 				//date is coming in wrong for some reason...
 				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
-				//finish order here...
-				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
-													"\nAddress: " + sessions[sessionId].location.string +
-													"\nPhone Number: " + phone + "\nTime: " + orderTime;
 				
-				console.log(message);
-				//this is the number you are eventually sending it to: +17173154479
-				//Brandon: +17173297650
-				client.messages
-  				.create({
-    				to: '+17173297650',
-    				from: '+16506811972',
-    				body: message
-  				})
-  				.then((message) => console.log(message.sid));
-				delete context.fail;
-				context.complete = phone;
+				context.foundTime = orderTime;
 			}else{
 				delete context.complete;
 				context.fail = true;

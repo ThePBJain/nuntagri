@@ -596,7 +596,7 @@ const actions = {
 			if(dayTime){
 				delete context.fail;
 				//date is coming in wrong for some reason...
-				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, EST:h:MM:ss TT");
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 

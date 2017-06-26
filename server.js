@@ -181,7 +181,6 @@ const findOrCreateSession = (fbid) => {
 		deliverer: null,
 		items: null, //will be an array for junk hauling
 		location: null,
-		dateTime: null,
 		message: ""
 	};
   }
@@ -551,7 +550,7 @@ const actions = {
 	junkOrder({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var dayTime = firstEntityValue(entities, 'datetime');
+			var dayTime = sessions[sessionId].context.foundTime;
 			if(context.fail){
 				delete context.fail;
 			}

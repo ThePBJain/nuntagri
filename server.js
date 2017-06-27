@@ -594,7 +594,7 @@ const actions = {
 			if(dayTime){
 				delete context.fail;
 				//date is coming in wrong because of system time zone
-				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 				
 				context.foundTime = orderTime;
 			}else{

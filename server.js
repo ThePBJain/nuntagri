@@ -557,13 +557,12 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
-				//date is coming in wrong for some reason...
-				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
+				
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location.string +
-													"\nPhone Number: " + phone + "\nTime: " + orderTime;
+													"\nPhone Number: " + phone + "\nTime: " + dayTime;
 				
 				console.log(message);
 				//this is the number you are eventually sending it to: +17173154479
@@ -594,7 +593,7 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
-				//date is coming in wrong for some reason...
+				//date is coming in wrong because of system time zone
 				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
 				
 				context.foundTime = orderTime;

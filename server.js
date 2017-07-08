@@ -332,11 +332,11 @@ var invoice = {
 	terms: "No need to submit payment. You will be auto-billed for this invoice."
 };
 
-generateInvoice(invoice, 'invoice.pdf', function() {
+/*generateInvoice(invoice, 'invoice.pdf', function() {
 	console.log("Saved invoice to invoice.pdf");
 }, function(error) {
 	console.error(error);
-});
+});*/
 
 //-----------------------------------------------------------------
 // Our bot actions

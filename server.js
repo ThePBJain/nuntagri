@@ -20,6 +20,7 @@ const fetch = require('node-fetch');
 const request = require('request');
 var jsonQuery = require('json-query');
 var schedule = require('node-schedule');
+var dateFormat = require('dateformat');
 var http = require('http');
 var https = require('https');
 var twilio = require('twilio');
@@ -28,6 +29,10 @@ const MessagingResponse = require('twilio').twiml.MessagingResponse;
 var accountSid = 'AC8501e05ec858043aaed043218ad665fb'; // Your Account SID from www.twilio.com/console
 var authToken = 'f3f5184f0b84ad7ce383b62b134050a0';   // Your Auth Token from www.twilio.com/console
 var client = new twilio(accountSid, authToken);
+
+//payment processing
+var stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 
 //geocoder using OpenStreetMap
 var NodeGeocoder = require('node-geocoder');
@@ -170,15 +175,17 @@ const findOrCreateSession = (fbid) => {
     sessionId = new Date().toISOString();
     sessions[sessionId] = {
 		fbid: fbid, // phone number for sms users
+		conversationTime: null,
 		context: {
 
 		},
-		name: "Pranav Jain",
+		name: "",
 		seller: null,
 		buyer: null,
 		deliverer: null,
 		items: null, //will be an array for junk hauling
-		location: null
+		location: null,
+		message: ""
 	};
   }
   return sessionId;
@@ -279,7 +286,7 @@ const actions = {
 		// Let's forward our bot response to her.
 		// We return a promise to let our bot know when we're done sending
 		if(recipientId.substring(0,6) == "100011"){
-			sessions[sessionId].message = text;
+			sessions[sessionId].message += ("\n" + text);
 			return Promise.resolve()
 			/*.then(() => null)
 			.catch((err) => {
@@ -482,17 +489,37 @@ const actions = {
         				longitude: res[0].longitude
         			}
         			sessions[sessionId].location = location;
+        			
+					delete context.fail;
+					context.success = true;
+					
+    			}else{
+    				//should do this but will accept for now
+    				//delete context.success;
+					//context.fail = true;
+					var location = {
+        				string: loc,
+        				latitude: 0.0,
+        				longitude: 0.0
+        			}
+        			sessions[sessionId].location = location;
+        			delete context.fail;
+					context.success = true;
     			}
-    			sessions[sessionId].location = loc;
+    			//sessions[sessionId].location = loc;
+    			return resolve(context);
   			}).catch(function(err) {
     			console.log(err);
+    			delete context.success;
+				context.fail = true;
+				return resolve(context);
   			});
 			}else{
-				sessions[sessionId].location = "246 Saint Phillip Ct.";
+				console.log("Could not identify location from wit.ai");
+				delete context.success;
+				context.fail = true;
+				return resolve(context);
 			}
-			delete context.fail;
-			context.success = true;
-			return resolve(context);
 		});
 	},
 	complete({sessionId, context, entities}) {
@@ -516,22 +543,52 @@ const actions = {
 				
 				sessions[sessionId].items = items;
 				
-				if(!sessions[sessionId].location){
-					delete context.missingWhen;
-					context.missingAddress = true; 
-				}else{
-					delete context.missingAddress;
-					context.missingWhen = true;
-				}
+				context.missingAddress = true; 
+				
 			}else{
 				delete context.missingAddress;
-				delete context.missingWhen;
 				context.fail = true;
 			}
 			return resolve(context);
 		});
 	},
 	junkOrder({sessionId, context, entities}) {
+		//used only for demo to find cart that addToCart method will send it too.
+		return new Promise(function(resolve, reject) {
+			var dayTime = sessions[sessionId].context.foundTime;
+			if(context.fail){
+				delete context.fail;
+			}
+			console.log("dateTime: " + dayTime);
+			if(dayTime){
+				delete context.fail;
+				
+				//finish order here...
+				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+													"\nAddress: " + sessions[sessionId].location.string +
+													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+				
+				console.log(message);
+				//this is the number you are eventually sending it to: +17173154479
+				//Brandon: +17173297650
+				client.messages
+  				.create({
+    				to: '+17173297650',
+    				from: '+16506811972',
+    				body: message
+  				})
+  				.then((message) => console.log(message.sid));
+				delete context.fail;
+				context.complete = phone;
+			}else{
+				delete context.complete;
+				context.fail = true;
+			}
+			return resolve(context);
+		});
+	},
+	checkDateTime({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
 			var dayTime = firstEntityValue(entities, 'datetime');
@@ -541,23 +598,12 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
-				//finish order here...
-				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
-													"\nAddress: " + sessions[sessionId].location +
-													"\nPhone Number: " + phone + "\nTime: " + dayTime;
-				//this is the number you are eventually sending it to: +17173154479
-				client.messages
-  				.create({
-    				to: '+17173154479',
-    				from: '+16506811972',
-    				body: message
-  				})
-  				.then((message) => console.log(message.sid));
-				delete context.fail;
-				context.success = sessions[sessionId].location;
+				//date is coming in wrong because of system time zone
+				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+				
+				context.foundTime = orderTime;
 			}else{
-				delete context.success;
+				delete context.complete;
 				context.fail = true;
 			}
 			return resolve(context);
@@ -579,8 +625,10 @@ const actions = {
 				//fbMessage(sender, 'Added item to cart #' + CART);
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
-													"\nAddress: " + sessions[sessionId].location +
+													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+													
+				console.log(message);
 				//this is the number you are eventually sending it to: +17176483389
 				client.messages
   				.create({
@@ -680,6 +728,7 @@ app.get('/webhook', (req, res) => {
 
 app.get('/', function (req, res) {
   res.send('Hello Pranav... What are you doing here?\n');
+  //maybe get this to work with website
 });
 
 //message handler for twilio
@@ -718,6 +767,7 @@ app.get('/twilio', function (req, res) {
 			res.writeHead(200, {'Content-Type': 'text/xml'});
 			twimlResp.message(sessions[sessionId].message);
 			res.end(twimlResp.toString());
+			sessions[sessionId].message = "";
 			// Based on the session state, you might want to reset the session.
 			// This depends heavily on the business logic of your bot.
 			// Example:
@@ -761,7 +811,34 @@ app.get('/junkTwilio', function (req, res) {
 			// binary for #
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
-	const sessionId = findOrCreateSession(sender);
+	var sessionId = findOrCreateSession(sender);
+	console.log("0. Sessions looks like: " + JSON.stringify(sessions));
+	//check to reset context
+	//if conversationTime == null
+	if(!sessions[sessionId].conversationTime){
+		console.log("Found no time");
+		//new conversation
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
+		//new conversation if 10 minutes has elapsed
+		console.log("Found that 10 minutes elapsed");
+		//testing deleting the entire session...
+		var temp = sessions[sessionId];
+		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
+		delete sessions[sessionId];
+		console.log("2. Sessions looks like: " + JSON.stringify(sessions));
+		sessionId = findOrCreateSession(sender);
+		console.log("3. Sessions looks like: " + JSON.stringify(sessions));
+		sessions[sessionId] = temp;
+		sessions[sessionId].context = {};
+		console.log("4. Sessions looks like: " + JSON.stringify(sessions));
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000 
+	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
 	if(text){
 		// We received a text message
 			
@@ -778,6 +855,7 @@ app.get('/junkTwilio', function (req, res) {
 			res.writeHead(200, {'Content-Type': 'text/xml'});
 			twimlResp.message(sessions[sessionId].message);
 			res.end(twimlResp.toString());
+			sessions[sessionId].message = "";
 			// Based on the session state, you might want to reset the session.
 			// This depends heavily on the business logic of your bot.
 			// Example:
@@ -790,6 +868,13 @@ app.get('/junkTwilio', function (req, res) {
 			console.log("Context: " + JSON.stringify(context));
 			if(context.complete){
 				context = {};
+				//remove time
+				sessions[sessionId].conversationTime = null;
+				//deleting the entire session...
+				var temp = sessions[sessionId];
+				delete sessions[sessionId];
+				sessionId = findOrCreateSession(sender);
+				sessions[sessionId] = temp;
 			}
 			// Updating the user's current session state
 			sessions[sessionId].context = context;

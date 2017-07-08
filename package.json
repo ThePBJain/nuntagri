@@ -20,6 +20,7 @@
     "node-schedule": "^1.1.1",
     "node-wit": "^4.0.0",
     "request": "^2.74.0",
+    "stripe": "^4.23.1",
     "twilio": "^3.0.0"
   }
 }

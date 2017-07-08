@@ -30,6 +30,10 @@ var accountSid = 'AC8501e05ec858043aaed043218ad665fb'; // Your Account SID from 
 var authToken = 'f3f5184f0b84ad7ce383b62b134050a0';   // Your Auth Token from www.twilio.com/console
 var client = new twilio(accountSid, authToken);
 
+//payment processing
+var stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+
 //geocoder using OpenStreetMap
 var NodeGeocoder = require('node-geocoder');
 var options = {

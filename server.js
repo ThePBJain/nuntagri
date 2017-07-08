@@ -26,13 +26,13 @@ var https = require('https');
 var twilio = require('twilio');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 //twilio specific
-var accountSid = 'AC8501e05ec858043aaed043218ad665fb'; // Your Account SID from www.twilio.com/console
-var authToken = 'f3f5184f0b84ad7ce383b62b134050a0';   // Your Auth Token from www.twilio.com/console
+var accountSid = process.env.TWILIO_ACCOUNT_SID; // Your Account SID from www.twilio.com/console
+var authToken = process.env.TWILIO_AUTHTOKEN;   // Your Auth Token from www.twilio.com/console
 var client = new twilio(accountSid, authToken);
 
 //payment processing
 var stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
+var numJunkLeadsSent = 0;
 
 //geocoder using OpenStreetMap
 var NodeGeocoder = require('node-geocoder');
@@ -75,7 +75,7 @@ const PORT = 443;
 
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;
-const WIT_JUNK_TOKEN = "ZZ5JYCM2HVOXHDE2ULJM5H2SGPX7WUNC";
+const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
 // Messenger API parameters
 const FB_PAGE_ID = process.env.FB_PAGE_ID;
 if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
@@ -571,13 +571,53 @@ const actions = {
 				console.log(message);
 				//this is the number you are eventually sending it to: +17173154479
 				//Brandon: +17173297650
+				const rate = 5.0; //$5 per lead sent
 				client.messages
   				.create({
     				to: '+17173297650',
     				from: '+16506811972',
     				body: message
-  				})
-  				.then((message) => console.log(message.sid));
+  				}).then(function(message) {
+      				console.log(message.sid);
+      				//update quote
+      				numJunkLeadsSent++;
+      				if(numJunkLeadsSent >= 5){
+      					const leadsCharged = numJunkLeadsSent;
+      					console.log("Charging Dirty Dog");
+      					stripe.customers.list({ 
+      							limit: 3,
+      							created: {
+      								lt: "1499552052"
+      							}
+      					
+  							 },
+  						function(err, customers) {
+    						// asynchronously called
+    						if(err){
+    							console.log(err);
+    						}else{
+    							const customer = customers.data[0];
+    							stripe.charges.create({
+  									amount: leadsCharged*rate*100,
+  									currency: "usd",
+  									customer: customer.id // Previously stored, then retrieved
+								}, function(err, charge) {
+  									// asynchronously called
+  									if(err){
+  										console.log(err);
+  									}else{
+  										numJunkLeadsSent -= leadsCharged;
+  									}
+								});
+							}
+  						});
+      					
+      				}
+      				
+    			}).catch(function(err) {
+      				console.error('Could not send message');
+      				console.error(err);
+   				});
 				delete context.fail;
 				context.complete = phone;
 			}else{

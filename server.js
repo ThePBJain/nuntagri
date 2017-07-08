@@ -23,6 +23,7 @@ var schedule = require('node-schedule');
 var dateFormat = require('dateformat');
 var http = require('http');
 var https = require('https');
+var fs = require('fs');
 var twilio = require('twilio');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
 //twilio specific
@@ -270,6 +271,71 @@ const selectDeliverers = (order, sessionId) => {
 
 
 };
+//-----------------------------------------------------------------
+// Invoice Generation and Sending
+// Create new invoice and email to Dirty Dog
+function generateInvoice(invoice, filename, success, error) {
+	var postData = JSON.stringify(invoice);
+	var options = {
+		hostname  : "invoice-generator.com",
+		port      : 443,
+		path      : "/",
+		method    : "POST",
+		headers   : {
+			"Content-Type": "application/json",
+			"Content-Length": Buffer.byteLength(postData)
+		}
+	};
+
+	var file = fs.createWriteStream(filename);
+
+	var req = https.request(options, function(res) {
+		res.on('data', function(chunk) {
+			file.write(chunk);
+		})
+			.on('end', function() {
+				file.end();
+
+				if (typeof success === 'function') {
+					success();
+				}
+			});
+	});
+	req.write(postData);
+	req.end();
+
+	if (typeof error === 'function') {
+		req.on('error', error);
+	}
+}
+
+var invoice = {
+	logo: "https://scontent.fagc1-2.fna.fbcdn.net/v/t1.0-9/15056399_883978575070770_2719717534750147548_n.png?oh=663d94e87412dded7c64011442b2c12a&amp;oe=59CFF0BF",
+	from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
+	to: "Dirty Dog Hauling",
+	currency: "usd",
+	number: "INV-0001",
+	payment_terms: "Auto-Billed - Do Not Pay",
+	items: [
+		{
+			name: "Subscription to NuntAgri",
+			quantity: 1,
+			unit_cost: 100
+		}
+	],
+	fields: {
+		tax: "%"
+	},
+	tax: 5,
+	notes: "Thanks for being an awesome customer!",
+	terms: "No need to submit payment. You will be auto-billed for this invoice."
+};
+
+generateInvoice(invoice, 'invoice.pdf', function() {
+	console.log("Saved invoice to invoice.pdf");
+}, function(error) {
+	console.error(error);
+});
 
 //-----------------------------------------------------------------
 // Our bot actions

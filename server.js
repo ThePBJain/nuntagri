@@ -333,6 +333,7 @@ var invoice = {
 };
 
 /*generateInvoice(invoice, 'invoice.pdf', function() {
+	
 	console.log("Saved invoice to invoice.pdf");
 }, function(error) {
 	console.error(error);
@@ -651,7 +652,32 @@ const actions = {
       				numJunkLeadsSent++;
       				if(numJunkLeadsSent >= 5){
       					const leadsCharged = numJunkLeadsSent;
-      					console.log("Charging Dirty Dog");
+      					
+      					//generate an Invoice
+      					var invoice = {
+							logo: "https://scontent.fagc1-2.fna.fbcdn.net/v/t1.0-9/15056399_883978575070770_2719717534750147548_n.png?oh=663d94e87412dded7c64011442b2c12a&amp;oe=59CFF0BF",
+							from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
+							to: "Dirty Dog Hauling",
+							currency: "usd",
+							number: "INV-0001",
+							payment_terms: "Auto-Billed - Do Not Pay",
+							items: [
+								{
+									name: "Leads from NuntAgri ",
+									quantity: leadsCharged,
+									unit_cost: rate
+								}
+							],
+							notes: "Thanks for being an awesome customer!",
+							terms: "No need to submit payment. You will be auto-billed for this invoice."
+						};
+						/*generateInvoice(invoice, 'invoice.pdf', function() {
+							console.log("Saved invoice to invoice.pdf");
+						}, function(error) {
+							console.error(error);
+						});*/
+      					console.log("------------------Charging Dirty Dog------------------");
+      					console.log("Leads: " + numJunkLeadsSent);
       					stripe.customers.list({ 
       							limit: 3,
       							created: {
@@ -675,6 +701,7 @@ const actions = {
   										console.log(err);
   									}else{
   										numJunkLeadsSent -= leadsCharged;
+  										console.log("Leads (should be 0): " + numJunkLeadsSent);
   									}
 								});
 							}

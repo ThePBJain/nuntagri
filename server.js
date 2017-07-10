@@ -317,7 +317,7 @@ function generateInvoice(invoice, filename, success, error) {
 	}
 }
 
-var invoice = {
+/*var invoice = {
 	logo: "https://scontent.fagc1-2.fna.fbcdn.net/v/t1.0-9/15056399_883978575070770_2719717534750147548_n.png?oh=663d94e87412dded7c64011442b2c12a&amp;oe=59CFF0BF",
 	from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
 	to: "Dirty Dog Hauling",
@@ -345,7 +345,7 @@ generateInvoice(invoice, 'invoice.pdf', function() {
 	sendEmail("pranajain@gmail.com");
 }, function(error) {
 	console.error(error);
-});
+});*/
 function sendEmail(userEmail){
 	var mail = new helper.Mail();
 	var email = new helper.Email('invoice@nuntagri.com', 'NuntAgri Billing');

@@ -349,13 +349,13 @@ var toEmail = new helper.Email('test@example.com');
 var subject = 'Sending with SendGrid is Fun';
 var content = new helper.Content('text/plain', 'and easy to do anywhere, even with Node.js');
 var mail = new helper.Mail(fromEmail, subject, toEmail, content);
-var request = sg.emptyRequest({
+var sgQuest = sg.emptyRequest({
   method: 'POST',
   path: '/v3/mail/send',
   body: mail.toJSON()
 });
 
-sg.API(request, function (error, response) {
+sg.API(sgQuest, function (error, response) {
   if (error) {
     console.log('Error response received');
   }

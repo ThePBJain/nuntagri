@@ -366,7 +366,7 @@ function sendEmail(userEmail){
 	attachment.setContent(base64File);
 	attachment.setType('application/pdf');
 	attachment.setFilename('invoice.pdf');
-	attachment.setDisposition('attachment');//inline
+	attachment.setDisposition('inline');//inline
 	mail.addAttachment(attachment);
 	
 	var sgRequest = sg.emptyRequest({

@@ -40,6 +40,7 @@ var client = new twilio(accountSid, authToken);
 //payment processing
 var stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 var numJunkLeadsSent = 0;
+var numJunkInvoices = 1;
 
 //geocoder using OpenStreetMap
 var NodeGeocoder = require('node-geocoder');
@@ -357,7 +358,7 @@ function sendEmail(userEmail){
 	personalization.addTo(email);
 	mail.addPersonalization(personalization);
 	
-	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body><iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
+	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body>Invoice: <iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
 	mail.addContent(content);
 	
 	var attachment = new helper.Attachment();
@@ -697,14 +698,14 @@ const actions = {
       				numJunkLeadsSent++;
       				if(numJunkLeadsSent >= 5){
       					const leadsCharged = numJunkLeadsSent;
-      					
+      					const invoiceNum = "INV-"+ numJunkInvoices;
       					//generate an Invoice
       					var invoice = {
-							logo: "https://scontent.fagc1-2.fna.fbcdn.net/v/t1.0-9/15056399_883978575070770_2719717534750147548_n.png?oh=663d94e87412dded7c64011442b2c12a&amp;oe=59CFF0BF",
+							logo: "https://scontent.fsnc1-1.fna.fbcdn.net/v/t1.0-9/19875336_1034769596658333_6527658905718200604_n.png?oh=f382576eb216f096a0760676ebecb0fd&oe=59C3A944",
 							from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
 							to: "Dirty Dog Hauling",
 							currency: "usd",
-							number: "INV-0001",
+							number: invoiceNum,
 							payment_terms: "Auto-Billed - Do Not Pay",
 							items: [
 								{
@@ -713,16 +714,13 @@ const actions = {
 									unit_cost: rate
 								}
 							],
-							notes: "Thanks for being an awesome customer!",
+							notes: "You should be emailed a receipt for this shortly.",
 							terms: "No need to submit payment. You will be auto-billed for this invoice."
 						};
-						/*generateInvoice(invoice, 'invoice.pdf', function() {
-							console.log("Saved invoice to invoice.pdf");
-						}, function(error) {
-							console.error(error);
-						});*/
       					console.log("------------------Charging Dirty Dog------------------");
       					console.log("Leads: " + numJunkLeadsSent);
+      					
+      					//get customer and charge him
       					stripe.customers.list({ 
       							limit: 3,
       							created: {
@@ -736,6 +734,12 @@ const actions = {
     							console.log(err);
     						}else{
     							const customer = customers.data[0];
+    							generateInvoice(invoice, 'invoice.pdf', function() {
+									console.log("Saved invoice to invoice.pdf");
+									sendEmail(customer.email);
+								}, function(error) {
+									console.error(error);
+								});
     							stripe.charges.create({
   									amount: leadsCharged*rate*100,
   									currency: "usd",

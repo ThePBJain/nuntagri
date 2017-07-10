@@ -357,8 +357,8 @@ function sendEmail(userEmail){
 	personalization.addTo(email);
 	mail.addPersonalization(personalization);
 	
-	//var content = new helper.Content('text/html', '<html><body>some text here</body></html>')
-	//mail.addContent(content);
+	var content = new helper.Content('text/html', '<html><body>Invoice:</body></html>')
+	mail.addContent(content);
 	
 	var attachment = new helper.Attachment();
 	var file = fs.readFileSync('invoice.pdf');

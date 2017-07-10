@@ -24,9 +24,14 @@ var dateFormat = require('dateformat');
 var http = require('http');
 var https = require('https');
 var fs = require('fs');
+
+//email sending related
+var helper = require('sendgrid').mail;
+var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
+
+//twilio specific
 var twilio = require('twilio');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
-//twilio specific
 var accountSid = process.env.TWILIO_ACCOUNT_SID; // Your Account SID from www.twilio.com/console
 var authToken = process.env.TWILIO_AUTHTOKEN;   // Your Auth Token from www.twilio.com/console
 console.log("TWILIO TEST: " + accountSid + "\n" + authToken);
@@ -272,6 +277,7 @@ const selectDeliverers = (order, sessionId) => {
 
 
 };
+
 //-----------------------------------------------------------------
 // Invoice Generation and Sending
 // Create new invoice and email to Dirty Dog
@@ -338,6 +344,25 @@ var invoice = {
 }, function(error) {
 	console.error(error);
 });*/
+var fromEmail = new helper.Email('test@example.com');
+var toEmail = new helper.Email('test@example.com');
+var subject = 'Sending with SendGrid is Fun';
+var content = new helper.Content('text/plain', 'and easy to do anywhere, even with Node.js');
+var mail = new helper.Mail(fromEmail, subject, toEmail, content);
+var request = sg.emptyRequest({
+  method: 'POST',
+  path: '/v3/mail/send',
+  body: mail.toJSON()
+});
+
+sg.API(request, function (error, response) {
+  if (error) {
+    console.log('Error response received');
+  }
+  console.log(response.statusCode);
+  console.log(response.body);
+  console.log(response.headers);
+});
 
 //-----------------------------------------------------------------
 // Our bot actions

@@ -338,31 +338,50 @@ var invoice = {
 	terms: "No need to submit payment. You will be auto-billed for this invoice."
 };
 
-/*generateInvoice(invoice, 'invoice.pdf', function() {
+generateInvoice(invoice, 'invoice.pdf', function() {
 	
 	console.log("Saved invoice to invoice.pdf");
+	sendEmail("pranajain@gmail.com");
 }, function(error) {
 	console.error(error);
-});*/
-var fromEmail = new helper.Email('test@example.com');
-var toEmail = new helper.Email('pranajain@gmail.com');
-var subject = 'Sending with SendGrid is Fun';
-var content = new helper.Content('text/plain', 'and easy to do anywhere, even with Node.js');
-var mail = new helper.Mail(fromEmail, subject, toEmail, content);
-var sgQuest = sg.emptyRequest({
-  method: 'POST',
-  path: '/v3/mail/send',
-  body: mail.toJSON()
 });
+function sendEmail(userEmail){
+	var mail = new helper.Mail();
+	var email = new helper.Email('invoice@nuntagri.com', 'NuntAgri Billing');
+	mail.setFrom(email);
+	
+	mail.setSubject('Invoice from NuntAgri');
+	
+	var personalization = new helper.Personalization();
+	email = new helper.Email(userEmail);
+	personalization.addTo(email);
+	mail.addPersonalization(personalization);
+	
+	//var content = new helper.Content('text/html', '<html><body>some text here</body></html>')
+	//mail.addContent(content);
+	
+	var attachment = new helper.Attachment();
+	var file = fs.readFileSync('invoice.pdf');
+	var base64File = new Buffer(file).toString('base64');
+	attachment.setContent(base64File);
+	attachment.setType('application/pdf');
+	attachment.setFilename('invoice.pdf');
+	attachment.setDisposition('attachment');//inline
+	mail.addAttachment(attachment);
+	
+	var sgRequest = sg.emptyRequest({
+	  	method: 'POST',
+	  	path: '/v3/mail/send',
+	  	body: mail.toJSON(),
+	});
 
-sg.API(sgQuest, function (error, response) {
-  if (error) {
-    console.log('Error response received');
-  }
-  console.log(response.statusCode);
-  console.log(response.body);
-  console.log(response.headers);
-});
+	sg.API(sgRequest, function(err, response) {
+		  console.log(response.statusCode);
+		  console.log(response.body);
+		  console.log(response.headers);
+	});
+}
+
 
 //-----------------------------------------------------------------
 // Our bot actions

@@ -357,7 +357,7 @@ function sendEmail(userEmail){
 	personalization.addTo(email);
 	mail.addPersonalization(personalization);
 	
-	var content = new helper.Content('text/html', '<html><body>Invoice:</body></html>')
+	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body><iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
 	mail.addContent(content);
 	
 	var attachment = new helper.Attachment();
@@ -367,6 +367,7 @@ function sendEmail(userEmail){
 	attachment.setType('application/pdf');
 	attachment.setFilename('invoice.pdf');
 	attachment.setDisposition('inline');//inline
+	attachment.setContentId("139db99fdb5c3704");
 	mail.addAttachment(attachment);
 	
 	var sgRequest = sg.emptyRequest({

@@ -787,8 +787,9 @@ const actions = {
 				context.foundTime = orderTime;
 				
 				//check to see if time is within 2 hours and fail if it does
-				console.log("This is the differential: " + ((new Date(dayTime)))/(1000*60*60) - (new Date()));
-				if( ((new Date(dayTime)))/(1000*60*60) - (new Date()) < 2.0){
+				console.log("This is the differential: " + ((new Date(dayTime)) - (new Date()))/(1000*60*60));
+				console.log("This is what new Object looks like: " + (new Date(dayTime)));
+				if( ((new Date(dayTime)) - (new Date()))/(1000*60*60) < 2.0){
 					console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 					delete context.foundTime;
 					context.fail = true;

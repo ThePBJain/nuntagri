@@ -785,8 +785,12 @@ const actions = {
 				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 				
 				context.foundTime = orderTime;
+				
+				//check to see if time is within 2 hours and fail if it does
 				if( ((new Date()) - (new Date(dayTime)))/(1000*60*60) < 2.0){
 					console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					delete context.foundTime;
+					context.fail = true;
 				}
 			}else{
 				delete context.complete;

@@ -787,7 +787,7 @@ const actions = {
 				context.foundTime = orderTime;
 				
 				//check to see if time is within 2 hours and fail if it does
-				if( ((new Date()) - (new Date(dayTime)))/(1000*60*60) < 2.0){
+				if( ((new Date(dayTime)))/(1000*60*60) - (new Date()) < 2.0){
 					console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 					delete context.foundTime;
 					context.fail = true;

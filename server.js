@@ -685,12 +685,13 @@ const actions = {
 				
 				console.log(message);
 				//this is the number you are eventually sending it to: +17173154479
+				//twilio numbers: +17173882677 , +16506811972 
 				//Brandon: +17173297650
 				const rate = 5.0; //$5 per lead sent
 				client.messages
   				.create({
-    				to: '+17173297650',
-    				from: '+16506811972',
+    				to: '+17173154479',
+    				from: '+17173882677 ',
     				body: message
   				}).then(function(message) {
       				console.log(message.sid);

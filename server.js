@@ -680,7 +680,7 @@ const actions = {
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
-													"Items: " + sessions[sessionId].items + 
+													"\nItems: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
 				

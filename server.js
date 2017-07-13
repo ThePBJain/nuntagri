@@ -679,7 +679,8 @@ const actions = {
 				
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
+													"Items: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
 				
@@ -690,7 +691,7 @@ const actions = {
 				const rate = 5.0; //$5 per lead sent
 				client.messages
   				.create({
-    				to: '+17173154479',
+    				to: '+15105799664',
     				from: '+17173882677 ',
     				body: message
   				}).then(function(message) {

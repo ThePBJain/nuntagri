@@ -187,7 +187,7 @@ const findOrCreateSession = (fbid) => {
 		context: {
 
 		},
-		name: "",
+		name: null,
 		seller: null,
 		buyer: null,
 		deliverer: null,
@@ -802,6 +802,38 @@ const actions = {
 			return resolve(context);
 		});
 	},
+	setName({sessionId, context, entities}) {
+	  //used only for demo to find cart that addToCart method will send it too.
+    return new Promise(function(resolve, reject) {
+			var name = firstEntityValue(entities, 'contact');
+			if(context.fail){
+				delete context.fail;
+			}
+			if(name){
+				sessions[sessionId].name = name;
+				context.gotName = true;
+			}else{
+				context.fail = true;
+			}
+			console.log("name: " + name);
+      return resolve(context);
+    });
+  },
+  checkPreviousUser({sessionId, context, entities}) {
+	  //used only for demo to find cart that addToCart method will send it too.
+    return new Promise(function(resolve, reject) {
+			if(context.fail){
+				delete context.fail;
+			}
+			if(sessions[sessionId].name){
+				context.exists = true;
+			}else{
+				context.doesntExist = true;
+			}
+			//console.log("name: " + name);
+      return resolve(context);
+    });
+  },
 	delivererJob({sessionId, context, entities}) {
 		//todo: finish writing this so it works and understands which leg it's on (to seller or to buyer)
 		//todo: set up verify function to verify by driver and buyer that item has been delivered...
@@ -1021,9 +1053,7 @@ app.get('/junkTwilio', function (req, res) {
 		var temp = sessions[sessionId];
 		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
 		delete sessions[sessionId];
-		console.log("2. Sessions looks like: " + JSON.stringify(sessions));
 		sessionId = findOrCreateSession(sender);
-		console.log("3. Sessions looks like: " + JSON.stringify(sessions));
 		sessions[sessionId] = temp;
 		sessions[sessionId].context = {};
 		console.log("4. Sessions looks like: " + JSON.stringify(sessions));

@@ -167,6 +167,7 @@ function callSendAPI(messageData) {
 // sessionId -> {fbid: facebookUserId, context: sessionState, numItems: ItemsInCart, type: TypeOfItemsInList, list: jsonQueryOfItems, cart: ArrayOfItemsInPreviousCart}
 
 //Set this up to put session as a user db table on mongodb
+
 const sessions = {};
 
 const findOrCreateSession = (fbid) => {
@@ -180,7 +181,7 @@ const findOrCreateSession = (fbid) => {
   });
   if (!sessionId) {
     // No session found for user fbid, let's create a new one
-    sessionId = new Date().toISOString();
+    sessionId = new Date().toISOString(); //123456789
     sessions[sessionId] = {
 		fbid: fbid, // phone number for sms users
 		conversationTime: null,
@@ -602,6 +603,7 @@ const actions = {
         				latitude: res[0].latitude,
         				longitude: res[0].longitude
         			}
+        			
         			sessions[sessionId].location = location;
         			
 					delete context.fail;
@@ -654,7 +656,6 @@ const actions = {
 			console.log("Items: " + items);
 			if(items){
 				delete context.fail;
-				
 				sessions[sessionId].items = items;
 				
 				context.missingAddress = true; 
@@ -698,7 +699,7 @@ const actions = {
       				console.log(message.sid);
       				//update quote
       				numJunkLeadsSent++;
-      				if(numJunkLeadsSent >= 5){
+      				if(numJunkLeadsSent >= 20){
       					const leadsCharged = numJunkLeadsSent;
       					const invoiceNum = "INV-"+ numJunkInvoices;
       					//generate an Invoice

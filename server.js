@@ -194,7 +194,8 @@ const findOrCreateSession = (fbid) => {
 		deliverer: null,
 		items: null, //will be an array for junk hauling
 		location: null,
-		message: ""
+		message: "",
+		text: ""
 	};
   }
   return sessionId;
@@ -808,6 +809,7 @@ const actions = {
 	  //used only for demo to find cart that addToCart method will send it too.
     return new Promise(function(resolve, reject) {
 			var name = firstEntityValue(entities, 'contact');
+			name = sessions[sessionId].text;
 			if(context.fail){
 				delete context.fail;
 			}
@@ -1064,6 +1066,7 @@ app.get('/junkTwilio', function (req, res) {
 	}
 	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000 
 	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
+	sessions[sessionId].text = text;
 	if(text){
 		// We received a text message
 			
@@ -1103,6 +1106,7 @@ app.get('/junkTwilio', function (req, res) {
 			}
 			// Updating the user's current session state
 			sessions[sessionId].context = context;
+			sessions[sessionId].text = "";
         })
         .catch((err) => {
 			console.error('Oops! Got an error from Wit: ', err.stack || err);

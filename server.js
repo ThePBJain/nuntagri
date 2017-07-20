@@ -228,7 +228,21 @@ const firstEntityValue = (entities, entity) => {
 			amount: load,
 			end: buyer location
 		}
-	],
+	]
+	//dirty dog
+	queue: [
+		{
+			name: "Pranav Jain",
+			items: "a sofa",
+			location: {
+        				string: loc,
+        				latitude: res[0].latitude,
+        				longitude: res[0].longitude
+        			},
+			phone: "+15105799664",
+			time: " Thu Jul 20, 2017 12:40pm "
+		}
+	]
 */
 const selectDeliverers = (order, sessionId) => {
 	var bestdeliverer = null;
@@ -642,7 +656,58 @@ const actions = {
 	complete({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-
+			var statement = firstEntityValue(entities, 'affirmation')
+			var deliverer = sessions[sessionId].deliverer
+			//for incomplete, not done, etc...
+			if(statement.includes("in") || statement.includes("not")){
+				
+						/*
+							//dirty dog
+							queue: [
+								{
+									name: "Pranav Jain",
+									items: "a sofa",
+									location: {
+												string: loc,
+												latitude: res[0].latitude,
+												longitude: res[0].longitude
+											},
+									phone: "+15105799664",
+									time: " Thu Jul 20, 2017 12:40pm "
+								}
+							]
+				*/
+				//same as below but with statement sent to leland saying order cancelled
+			}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
+				var message = "";
+				if( deliverer.queue[0]){
+					var order = deliverer.queue[0]
+					message = "Order by user: \n" + "Name: " + order.name +
+													"\nItems: " + order.items + 
+													"\nAddress: " + order.location.string +
+													"\nPhone Number: " + order.phone + 
+													"\nTime: " + order.time;
+				}else{
+					message = "Your job queue is currently empty. You can either wait for another job or call it a day! ";
+				}
+												
+				//driver's phone
+				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+				
+				//send message to driver with order or "empty job queue" message.
+				client.messages
+  				.create({
+    				to: phone,
+    				from: '+17173882677 ',
+    				body: message
+  				}).then(function(message) {
+      				console.log(message.sid);
+      			}).catch(function(err) {
+      				console.error('Could not send message');
+      				console.error(err);
+   				});
+			}
+			
 			context.complete = true;
 			return resolve(context);
 		});

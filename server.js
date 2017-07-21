@@ -253,7 +253,7 @@ const selectDeliverers = (order, sessionId) => {
 			// Yep, got it!
 			var deliverer = sessions[k].deliverer;
 			//algo to find best driver goes here.
-			if(deliverer.capacity >= order.amount){
+			if(deliverer.capacity >= 40){
 				bestdeliverer = deliverer;
 				bestK = k;
 			}
@@ -271,13 +271,17 @@ const selectDeliverers = (order, sessionId) => {
 		if(sessions[bestK].fbid.substring(0,6) == "100011"){
 			//sms twilio
 			var phone = "+" + (sessions[bestK].fbid).substring(6);
-			var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
-													"\nAddress: " + bestdeliverer.queue[0].start +
-													"\nContact at: " + sessions[sessionId].fbid;
+			var message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
+													"\nItems: " + bestdeliverer.queue[0].items + 
+													"\nAddress: " + bestdeliverer.queue[0].location.string +
+													"\nPhone Number: " + bestdeliverer.queue[0].phone + 
+													"\nTime: " + bestdeliverer.queue[0].time + 
+													"\nText \"done\" or \"complete\" when job has been finished";
+			//will have to change this so can work from different phone numbers depending on who's using this
 			client.messages
   				.create({
     				to: phone,
-    				from: '+16506811972',
+    				from: '+17173882677',
     				body: message
   				})
   				.then((message) => console.log(message.sid));
@@ -676,17 +680,28 @@ const actions = {
 									time: " Thu Jul 20, 2017 12:40pm "
 								}
 							]
+							var order = {
+											name: sessions[sessionId].name,
+											items: sessions[sessionId].items,
+											location: sessions[sessionId].location,
+											phone: phone,
+											time: dayTime
+										}
+											
 				*/
 				//same as below but with statement sent to leland saying order cancelled
 			}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
 				var message = "";
+				//get rid of old order
+				deliverer.queue.splice(0, 1);
 				if( deliverer.queue[0]){
-					var order = deliverer.queue[0]
-					message = "Order by user: \n" + "Name: " + order.name +
+					var order = deliverer.queue[0];
+					message = "Next order by user: \n" + "Name: " + order.name +
 													"\nItems: " + order.items + 
 													"\nAddress: " + order.location.string +
 													"\nPhone Number: " + order.phone + 
-													"\nTime: " + order.time;
+													"\nTime: " + order.time + 
+													"\nText \"done\" or \"complete\" when job has been finished";
 				}else{
 					message = "Your job queue is currently empty. You can either wait for another job or call it a day! ";
 				}
@@ -746,6 +761,14 @@ const actions = {
 				
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+				var order = {
+					name: sessions[sessionId].name,
+					items: sessions[sessionId].items,
+					location: sessions[sessionId].location,
+					phone: phone,
+					time: dayTime
+				};
+				selectDeliverers(order, sessionId);			
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
 													"\nItems: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location.string +

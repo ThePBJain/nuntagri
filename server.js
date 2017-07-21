@@ -947,9 +947,9 @@ const actions = {
 			var measurement = firstEntityValue(entities, 'measurement')
 			console.log("Load: " + load + "\n Measurement: " + measurement);
 			sessions[sessionId].deliverer = {
-			capacity: 0,
+			capacity: 50,
 			queue: [],
-			range: 0,
+			range: 50,
 			rate: 5
 			}
 			if(measurement){
@@ -974,8 +974,10 @@ const actions = {
 				delete context.fail;
 				context.success = true;
 			}else{
-				delete context.success;
-				context.fail = true;
+				//delete context.success;
+				//context.fail = true;
+				delete context.fail;
+				context.success = true;
 			}
 
 			return resolve(context);

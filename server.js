@@ -260,42 +260,43 @@ const selectDeliverers = (order, sessionId) => {
 	}
 	
 	});
-	var isEmpty = bestdeliverer.queue < 1;
+	if(bestDeliverer){
+		var isEmpty = bestdeliverer.queue < 1;
 	
-	//if it is empty start queue movement after pushing order in.
-	bestdeliverer.queue.push(order);
-	sessions[bestK].context.deliverer = true;
-	if(isEmpty){
-		//send message to deliverer & set context
-		//check if bestdeliverer is facebook or text
-		if(sessions[bestK].fbid.substring(0,6) == "100011"){
-			//sms twilio
-			var phone = "+" + (sessions[bestK].fbid).substring(6);
-			var message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
-													"\nItems: " + bestdeliverer.queue[0].items + 
-													"\nAddress: " + bestdeliverer.queue[0].location.string +
-													"\nPhone Number: " + bestdeliverer.queue[0].phone + 
-													"\nTime: " + bestdeliverer.queue[0].time + 
-													"\nText \"done\" or \"complete\" when job has been finished";
-			//will have to change this so can work from different phone numbers depending on who's using this
-			client.messages
-  				.create({
-    				to: phone,
-    				from: '+17173882677',
-    				body: message
-  				})
-  				.then((message) => console.log(message.sid));
-		}else{
-			//facebook
-			var sender = sessions[bestK].fbid;
-			var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
-													"\nAddress: " + bestdeliverer.queue[0].start +
-													"\nContact at: " + sessions[sessionId].fbid;
-			fbMessage(sender, message);
-		}
+		//if it is empty start queue movement after pushing order in.
+		bestdeliverer.queue.push(order);
+		sessions[bestK].context.deliverer = true;
+		if(isEmpty){
+			//send message to deliverer & set context
+			//check if bestdeliverer is facebook or text
+			if(sessions[bestK].fbid.substring(0,6) == "100011"){
+				//sms twilio
+				var phone = "+" + (sessions[bestK].fbid).substring(6);
+				var message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
+														"\nItems: " + bestdeliverer.queue[0].items + 
+														"\nAddress: " + bestdeliverer.queue[0].location.string +
+														"\nPhone Number: " + bestdeliverer.queue[0].phone + 
+														"\nTime: " + bestdeliverer.queue[0].time + 
+														"\nText \"done\" or \"complete\" when job has been finished";
+				//will have to change this so can work from different phone numbers depending on who's using this
+				client.messages
+					.create({
+						to: phone,
+						from: '+17173882677',
+						body: message
+					})
+					.then((message) => console.log(message.sid));
+			}else{
+				//facebook
+				var sender = sessions[bestK].fbid;
+				var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
+														"\nAddress: " + bestdeliverer.queue[0].start +
+														"\nContact at: " + sessions[sessionId].fbid;
+				fbMessage(sender, message);
+			}
 		
+		}
 	}
-
 
 };
 

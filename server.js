@@ -260,7 +260,7 @@ const selectDeliverers = (order, sessionId) => {
 	}
 	
 	});
-	if(bestDeliverer){
+	if(bestdeliverer){
 		var isEmpty = bestdeliverer.queue < 1;
 	
 		//if it is empty start queue movement after pushing order in.

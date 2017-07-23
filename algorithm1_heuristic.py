@@ -46,43 +46,63 @@ class Depot:
 
 
 class Schedule:
-    def __init__(self, appointments_list):
+    def __init__(self, appointments_list, job_hash, job_list):
         self.appointments_list = appointments_list
+        self.job_hash = job_hash
+        self.job_list = job_list
 
     def display_appointment_list(self):
+        print("Number of windows missed :" + str(self.find_number_windows_missed()))
+        print("Cumulative miss time: "+ str(self.find_cumulative_miss_time()))
+        print("-----------------------------")
         for a in self.appointments_list:
             print("Job ID: " + a.jobID)
             print("Location: " + str(a.location))
             print("Window Requested: " + str(a.window))
             print("Amount loaded: " + str(a.amount_loaded))
+            print("Load time: " + str(a.load_time))
             print("Truck remaining capacity: " + str(a.remaining_capacity))
             print("Arrival: " + str(a.appointment_start))
             print("Departure: " + str(a.appointment_end))
             print("-----------------------------")
 
+    def find_number_windows_missed(self):
+        count = 0
+        for a in self.appointments_list:
+            if a.appointment_end > a.window[1]:
+                count = count + 1
+        return count
+
+    def find_cumulative_miss_time(self):
+        miss_time = 0
+        for a in self.appointments_list:
+            if a.appointment_end > a.window[1]:
+                miss_time = miss_time + (a.appointment_end - a.window[1])
+        return miss_time
+
 
 class Appointment:
-    #note: jobID 0 will reference the depot, jobID -1 will reference the dump
-    def __init__(self, appointment_start, appointment_end , job_ID, location, window, amount_loaded, remaining_capacity):
+    def __init__(self, appointment_start, appointment_end , job_ID, location, window, amount_loaded, load_time, remaining_capacity):
         self.appointment_start  = appointment_start
         self.appointment_end = appointment_end
         self.jobID = job_ID
         self.location = location
         self.window = window
         self.amount_loaded = amount_loaded
+        self.load_time = load_time
         self.remaining_capacity = remaining_capacity
 
 
-def make_schedule(driver, truck, depot, dump, jobList):
+def make_schedule(driver, truck, depot, dump, jobList, start_time, start_pos, starting_load):
     all_possible_orderings = create_orderings(jobList)
     """need to add the time to get to/from depot at beginning/end of day, and maybe last dump at end of day"""
     j_hash = {}
     for j in jobList:
         j_hash[j.jobID] = j
-    winning_order_index = evaluate_cost_of_all_orderings(all_possible_orderings, truck, depot, dump, jobList, j_hash)
+    winning_order_index = evaluate_cost_of_all_orderings(all_possible_orderings, truck, depot, dump, j_hash, start_time, start_pos, starting_load)
     winning_order = all_possible_orderings[winning_order_index]
-    appointmentList = make_appointment_list(winning_order, driver, truck, depot, dump, j_hash)
-    schedule = Schedule(appointmentList)
+    appointmentList = make_appointment_list(winning_order, driver, truck, depot, dump, j_hash, start_time, start_pos, starting_load)
+    schedule = Schedule(appointmentList, j_hash, jobList)
     return schedule
 
 
@@ -123,10 +143,10 @@ def distance(p1, p2):
     return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 
-def evaluate_cost_of_all_orderings(all_possible_orderings, truck, depot, dump, jobList, j_hash):
+def evaluate_cost_of_all_orderings(all_possible_orderings, truck, depot, dump, j_hash, start_time, start_pos, starting_load):
     costs = []
     for ordering in all_possible_orderings:
-        costs.append(cost_of_an_ordering(ordering, truck, depot, dump, j_hash))
+        costs.append(cost_of_an_ordering(ordering, truck, depot, dump, j_hash, start_time, start_pos, starting_load))
     min_index = 0
     for i in range(1, len(costs)):
         """
@@ -137,13 +157,13 @@ def evaluate_cost_of_all_orderings(all_possible_orderings, truck, depot, dump, j
     return min_index
 
 
-def cost_of_an_ordering(ordering, truck, depot, dump, j_hash):
+def cost_of_an_ordering(ordering, truck, depot, dump, j_hash, start_time, start_pos, starting_load):
     cost = 0 #cost is driving time + stiff penalties for missing time window
-    time = 8 #driver's start time
+    time = start_time
     if(len(ordering)) == 0:
         return cost
-    truck.remainingCapacity = truck.maxCapacity
-    current_pos = depot.location
+    truck.remainingCapacity = truck.maxCapacity - starting_load
+    current_pos = start_pos
     for id in ordering:
         if truck.remainingCapacity - j_hash[id].amount < 0:
             # need to adjust cost to account for time to travel to dump, the time to unload the truck(.25), and then the time to drive to next job, and time to load next job
@@ -178,84 +198,19 @@ def cost_of_an_ordering(ordering, truck, depot, dump, j_hash):
         current_pos = j_hash[id].location
         """if we didn't finish the job in the window"""
         if time > j_hash[id].window[1]:
-            cost = cost+100
+            cost = cost+100 * (time - j_hash[id].window[1])
     driving_time = cost
     return driving_time
 
 
-def cost_of_an_ordering2(ordering, truck, depot, dump, j_hash):
-    cost = 0 #cost is driving time + stiff penalties for missing time window
-    time = 8 #driver's start time
-    if(len(ordering)) == 0:
-        return cost
-    truck.remainingCapacity = truck.maxCapacity
-    current_pos = depot.location
-    print(ordering)
-    print("current capacity: " + str(truck.remainingCapacity))
-    print("current cost: " + str(cost))
-    for id in ordering:
-        if truck.remainingCapacity - j_hash[id].amount < 0:
-            # need to adjust cost to account for time to travel to dump, the time to unload the truck(.25), and then the time to drive to next job, and time to load next job
-            cost = cost + (distance(current_pos, dump.location)) / 60.0
-            time = time + (distance(current_pos, dump.location)) / 60.0 + .25
-            amount_dumped = truck.maxCapacity - truck.remainingCapacity
-            truck.remainingCapacity = truck.maxCapacity
-            print("**DUMP**")
-            print("unload time: " + str(.25))
-            print("unload amount: " + str(amount_dumped))
-            print("cummulative cost: " + str(cost))
-            print("capacity remaining: " + str(truck.remainingCapacity))
-            print("current time: "+ str(time))
-            cost = cost + (distance(dump.location, j_hash[id].location)) / 60.0
-            """if we get to the job before the window starts"""
-            if time < j_hash[id].window[0]:
-                time = j_hash[id].window[0]
-            time = time + j_hash[id].loadTime
-            truck.remainingCapacity = truck.remainingCapacity - j_hash[id].amount
-            #
-            print(id)
-            print("load time: " + str(j_hash[id].loadTime))
-            print("load amount: "+ str(j_hash[id].amount))
-            print("cummulative cost: " + str(cost))
-            print("capacity remaining: " + str(truck.remainingCapacity))
-            print("current time: " + str(time))
-        # if the truck can hold the next load, need to ajust cost to account for time to travel to next job, and time to load next job
-        else:
-            #
-            cost = cost + (distance(j_hash[id].location, current_pos)) / 60.0
-            """if we get to the job before the window starts"""
-            if time < j_hash[id].window[0]:
-                time = j_hash[id].window[0]
-            time = time + j_hash[id].loadTime + (distance(j_hash[id].location, current_pos)) / 60.0
-            """if we get to the job before the window starts"""
-            truck.remainingCapacity = truck.remainingCapacity - j_hash[id].amount
-            print(id)
-            print("load time: " + str(j_hash[id].loadTime))
-            print("load amount: "+ str(j_hash[id].amount))
-            print("cummulative cost: " + str(cost))
-            print("capacity remaining: " + str(truck.remainingCapacity))
-            print("current time: "+ str(time))
-        current_pos = j_hash[id].location
-
-        """if we didn't finish the job in the window"""
-        if time > j_hash[id].window[1]:
-            cost = cost+100
-
-    driving_time = cost
-    return driving_time
-
-
-def make_appointment_list(ordering, driver, truck, depot, dump, j_hash):
+def make_appointment_list(ordering, driver, truck, depot, dump, j_hash, start_time, start_pos, starting_load):
     appointmentList = []
-    start_current_appt = -1
-    end_current_appt =-1
-    job_id = " "
     cost = 0  # cost is driving time + stiff penalties for missing time window
-    time = 8  # driver's start time
+    time = start_time  # driver's start time
     if (len(ordering)) == 0:
         return cost
-    truck.remainingCapacity = truck.maxCapacity
-    current_pos = depot.location
+    truck.remainingCapacity = truck.maxCapacity - starting_load
+    current_pos = start_pos
     for id in ordering:
         if truck.remainingCapacity - j_hash[id].amount < 0:
             # need to adjust cost to account for time to travel to dump, the time to unload the truck(.25), and then the time to drive to next job, and time to load next job
@@ -263,7 +218,7 @@ def make_appointment_list(ordering, driver, truck, depot, dump, j_hash):
             time = time + (distance(current_pos, dump.location)) / 60.0 + .25
             amount_dumped = truck.maxCapacity - truck.remainingCapacity
             truck.remainingCapacity = truck.maxCapacity
-            temp = Appointment(time-.25, time, "Dump", dump.location, (-1, -1), -1 * amount_dumped, truck.remainingCapacity)
+            temp = Appointment(time-.25, time, "Dump", dump.location, (-1000, 1000), -1 * amount_dumped, .25, truck.remainingCapacity)
             appointmentList.append(temp)
             cost = cost + (distance(dump.location, j_hash[id].location)) / 60.0
             """if we get to the job before the window starts"""
@@ -271,7 +226,7 @@ def make_appointment_list(ordering, driver, truck, depot, dump, j_hash):
                 time = j_hash[id].window[0]
             time = time + j_hash[id].loadTime
             truck.remainingCapacity = truck.remainingCapacity - j_hash[id].amount
-            temp = Appointment(time - j_hash[id].loadTime, time, str(id), j_hash[id].location, j_hash[id].window, j_hash[id].amount, truck.remainingCapacity)
+            temp = Appointment(time - j_hash[id].loadTime, time, str(id), j_hash[id].location, j_hash[id].window, j_hash[id].amount, j_hash[id].loadTime, truck.remainingCapacity)
             appointmentList.append(temp)
 
         # if the truck can hold the next load, need to ajust cost to account for time to travel to next job, and time to load next job
@@ -284,7 +239,7 @@ def make_appointment_list(ordering, driver, truck, depot, dump, j_hash):
             time = time + j_hash[id].loadTime + (distance(j_hash[id].location, current_pos)) / 60.0
             """if we get to the job before the window starts"""
             truck.remainingCapacity = truck.remainingCapacity - j_hash[id].amount
-            temp = Appointment(time - j_hash[id].loadTime, time, str(id), j_hash[id].location, j_hash[id].window, j_hash[id].amount, truck.remainingCapacity)
+            temp = Appointment(time - j_hash[id].loadTime, time, str(id), j_hash[id].location, j_hash[id].window, j_hash[id].amount, j_hash[id].loadTime,  truck.remainingCapacity)
             appointmentList.append(temp)
         current_pos = j_hash[id].location
         """if we didn't finish the job in the window"""
@@ -294,69 +249,40 @@ def make_appointment_list(ordering, driver, truck, depot, dump, j_hash):
     driving_time = cost
     return appointmentList
 
-"""test data"""
-a = Job(1, (0, 30),  5, (12,14), .5)
-b = Job(2, (15, 2),  2, (12,14), .25)
-c = Job(3, (9, 9),  7, (10,12), .75)
-d = Job(4, (0, 30),  1, (14,16), .25)
-e = Job(5, (17, -1),  5, (10,12), .5)
-f = Job(6, (3, 9), 5, (8, 10), .5)
-g = Job(7, (0, 29), 1, (12,14), .125)
-h = Job(8, (11, 11), 1, (10,12), .125)
-i = Job(9, (1, -2), 7, (16, 18), .75)
 
-joli = JobList([a,b,c,d,e,f,g, h, i])
-driver = Driver(1, [], (0,0), 8)
-truck = Truck(1, 25, 25)
-dump = Dump((12, 12))
-depot = Depot((0,0))
+def try_to_dynamically_insert_job(driver, truck, depot, dump, schedule, new_job, query_time):
+    appointments_ID_left = []
+    previous_job_index = 0
 
-hash = {}
-for jo in joli.jl:
-    hash[jo.jobID] = jo
+    ###########what if there are no jobs before or after the job being inserted....
 
+    al = schedule.appointments_list
+    for a in range(0, len(al)):
+        if query_time <= al[a].appointment_start:
+            if al[a].jobID != "Dump":
+                appointments_ID_left.append(int(al[a].jobID))
+        else: #i.e. current_time > al[a].start
+            previous_job_index = a
+    j_hash = schedule.job_hash
+    appointments_ID_left.append(new_job.jobID)
+    j_hash[new_job.jobID] = new_job
+    new_j_list = []
+    for a_ID in appointments_ID_left:
+        new_j_list.append(j_hash[a_ID])
 
-#generate all possible orderings
-apo = create_orderings(joli.jl)
-"""
-for o in apo:
-    print(o)
-"""
+    if query_time <= al[previous_job_index].appointment_end:
+        t_available = al[previous_job_index].appointment_end
+        start_pos = al[previous_job_index].location
+        start_load = truck.maxCapacity - al[previous_job_index].remaining_capacity
+    else:
+        t_available = al[appointments_ID_left[0]].appointment_start
+        start_pos =  al[appointments_ID_left[0]].location
+        start_load = truck.maxCapacity - al[appointments_ID_left[0]].remaining_capacity
 
-#test the cost of an arbitrary ordering
-#with output
-"""
-cost_of_an_ordering2((6, 5, 3, 8, 7, 1, 2, 4), truck, depot, dump, hash)
-"""
-#without output
-"""
-print("cost of ordering 4")
-print(cost_of_an_ordering((6, 3, 5, 8, 7, 1, 2, 4), truck, depot, dump, hash))
-"""
-
-#looking at all the costs
-costs = []
-for ordering in apo:
-    costs.append(cost_of_an_ordering(ordering, truck, depot, dump, hash))
-min_index = 0
-for i in range(1, len(costs)):
-    """
-    print(costs[i])
-    """
-    if costs[i] < costs[min_index]:
-            min_index = i
-"""
-for cost in costs:
-    print(cost)
-"""
-"""
-print(min_index)
-"""
-
-#selecting winning ordering
-
-
-
-#making schedule
-sched = make_schedule(driver, truck, depot, dump, joli.jl)
-sched.display_appointment_list()
+    new_schedule = make_schedule(driver, truck, depot, dump, new_j_list, t_available, start_pos, start_load)
+    if new_schedule.find_number_windows_missed() > schedule.find_number_windows_missed() or new_schedule.find_cumulative_miss_time() > schedule.find_cumulative_miss_time():
+        print("Unable to insert new job.  returning old schedule.")
+        return schedule
+    else:
+        print("New job inserted successfully.  returning new schedule with upcoming jobs from old schedule and the dynamically inserted job.")
+        return new_schedule

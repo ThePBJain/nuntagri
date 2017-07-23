@@ -664,64 +664,66 @@ const actions = {
 			var statement = firstEntityValue(entities, 'affirmation')
 			var deliverer = sessions[sessionId].deliverer
 			//for incomplete, not done, etc...
-			if(statement.includes("in") || statement.includes("not")){
+			if(statement){
+				if(statement.includes("in") || statement.includes("not")){
 				
-						/*
-							//dirty dog
-							queue: [
-								{
-									name: "Pranav Jain",
-									items: "a sofa",
-									location: {
-												string: loc,
-												latitude: res[0].latitude,
-												longitude: res[0].longitude
-											},
-									phone: "+15105799664",
-									time: " Thu Jul 20, 2017 12:40pm "
-								}
-							]
-							var order = {
-											name: sessions[sessionId].name,
-											items: sessions[sessionId].items,
-											location: sessions[sessionId].location,
-											phone: phone,
-											time: dayTime
-										}
+							/*
+								//dirty dog
+								queue: [
+									{
+										name: "Pranav Jain",
+										items: "a sofa",
+										location: {
+													string: loc,
+													latitude: res[0].latitude,
+													longitude: res[0].longitude
+												},
+										phone: "+15105799664",
+										time: " Thu Jul 20, 2017 12:40pm "
+									}
+								]
+								var order = {
+												name: sessions[sessionId].name,
+												items: sessions[sessionId].items,
+												location: sessions[sessionId].location,
+												phone: phone,
+												time: dayTime
+											}
 											
-				*/
-				//same as below but with statement sent to leland saying order cancelled
-			}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
-				var message = "";
-				//get rid of old order
-				deliverer.queue.splice(0, 1);
-				if( deliverer.queue[0]){
-					var order = deliverer.queue[0];
-					message = "Next order by user: \n" + "Name: " + order.name +
-													"\nItems: " + order.items + 
-													"\nAddress: " + order.location.string +
-													"\nPhone Number: " + order.phone + 
-													"\nTime: " + order.time + 
-													"\nText \"done\" or \"complete\" when job has been finished";
-				}else{
-					message = "Your job queue is currently empty. You can either wait for another job or call it a day! ";
-				}
+					*/
+					//same as below but with statement sent to leland saying order cancelled
+				}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
+					var message = "";
+					//get rid of old order
+					deliverer.queue.splice(0, 1);
+					if( deliverer.queue[0]){
+						var order = deliverer.queue[0];
+						message = "Next order by user: \n" + "Name: " + order.name +
+														"\nItems: " + order.items + 
+														"\nAddress: " + order.location.string +
+														"\nPhone Number: " + order.phone + 
+														"\nTime: " + order.time + 
+														"\nText \"done\" or \"complete\" when job has been finished";
+					}else{
+						message = "Your job queue is currently empty. You can either wait for another job or call it a day! ";
+					}
 												
-				//driver's phone
-				var phone = "+" + (sessions[sessionId].fbid).substring(6);
+					//driver's phone
+					var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				
-				//send message to driver with order or "empty job queue" message.
-				client.messages
-  				.create({
-    				to: phone,
-    				from: '+17173882677 ',
-    				body: message
-  				}).then(function(message) {
-      				console.log(message.sid);
-      			}).catch(function(err) {
-      				console.error('Could not send message');
-      				console.error(err);
-   				});
+					//send message to driver with order or "empty job queue" message.
+					client.messages
+					.create({
+						to: phone,
+						from: '+17173882677 ',
+						body: message
+					}).then(function(message) {
+						console.log(message.sid);
+					}).catch(function(err) {
+						console.error('Could not send message');
+						console.error(err);
+					});
+				}
 			}
 			
 			context.complete = true;

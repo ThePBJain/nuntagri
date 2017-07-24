@@ -279,6 +279,7 @@ const selectDeliverers = (order, sessionId) => {
 														"\nTime: " + bestdeliverer.queue[0].time + 
 														"\nText \"done\" or \"complete\" when job has been finished";
 				//will have to change this so can work from different phone numbers depending on who's using this
+				console.log("Sending Message to deliverer");
 				client.messages
 					.create({
 						to: phone,
@@ -613,6 +614,7 @@ const actions = {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
 			var loc = firstEntityValue(entities, 'location')
+			console.log("Location understood by wit.ai: " + loc);
 			if(loc){
 			geocoder.geocode(loc)
   			.then(function(res) {

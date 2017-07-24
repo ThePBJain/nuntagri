@@ -78,8 +78,8 @@ try {
 }
 
 // Webserver parameter
-//const PORT = process.env.PORT || 8443; //443
-const PORT = 443;
+const PORT = process.env.PORT || 443; //443
+//const PORT = 443;
 
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;
@@ -1336,12 +1336,16 @@ function verifyRequestSignature(req, res, buf) {
 //console.log('Listening on :' + PORT + '...');
 
 //create server and put on port 443...
-var fs = require('fs');
 
-var options = {
-	key: fs.readFileSync('privkey.pem'),
-	cert: fs.readFileSync('cert.pem')
-};
-//http.createServer(app).listen(80);
-https.createServer(options, app).listen(443);
-console.log('Listening on port: ' + 443 + '...');
+if(PORT == 443){
+	var options = {
+		key: fs.readFileSync('privkey.pem'),
+		cert: fs.readFileSync('cert.pem')
+	};
+	//for starting prod server on ssl
+	https.createServer(options, app).listen(443);
+}else{
+	//for dev testing server
+	http.createServer(app).listen(PORT);
+}
+console.log('Listening on port: ' + PORT + '...');

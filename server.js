@@ -245,6 +245,7 @@ const firstEntityValue = (entities, entity) => {
 	]
 */
 const selectDeliverers = (order, sessionId) => {
+	console.log("Selecting the drivers------------------");
 	var bestdeliverer = null;
 	var closest = 10000;
 	var bestK = null;
@@ -260,7 +261,9 @@ const selectDeliverers = (order, sessionId) => {
 	}
 	
 	});
+	console.log("BestDeliverer: " + bestdeliverer)
 	if(bestdeliverer){
+		console.log("Best driver is: " + sessions[bestK])
 		var isEmpty = bestdeliverer.queue < 1;
 	
 		//if it is empty start queue movement after pushing order in.

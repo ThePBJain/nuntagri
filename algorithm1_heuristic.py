@@ -251,35 +251,64 @@ def make_appointment_list(ordering, driver, truck, depot, dump, j_hash, start_ti
 
 
 def try_to_dynamically_insert_job(driver, truck, depot, dump, schedule, new_job, query_time):
-    appointments_ID_left = []
-    previous_job_index = 0
 
-    ###########what if there are no jobs before or after the job being inserted....
-
-    al = schedule.appointments_list
+    ###########potential bug: what if there are no jobs before or after the job being inserted....
+    print("INFO ON THE DYNAMIC INSERTION REQUEST")
+    print("Query was made at: "+str(query_time))
+    unfulfilled_jobIDs = []
+    al = schedule.appointments_list #ordered list of original appointments
+    al_previous_jobID = 0
+    al_previous_job_index = 0
     for a in range(0, len(al)):
-        if query_time <= al[a].appointment_start:
-            if al[a].jobID != "Dump":
-                appointments_ID_left.append(int(al[a].jobID))
-        else: #i.e. current_time > al[a].start
-            previous_job_index = a
+        if al[a].jobID != "Dump":
+            if query_time <= al[a].appointment_start:
+                unfulfilled_jobIDs.append(int(al[a].jobID))
+                print(al[a].jobID + " is a remaining job")
+            #else: current_time > al[a].start
+            else:
+                al_previous_job_index = a
+                al_previous_jobID = int(al[a].jobID)
+                print(al[a].jobID + " has already passed or been started")
+
+
+
+    print(str(new_job.jobID)+ " is the job we are trying to dynamically insert")
+
     j_hash = schedule.job_hash
-    appointments_ID_left.append(new_job.jobID)
     j_hash[new_job.jobID] = new_job
-    new_j_list = []
-    for a_ID in appointments_ID_left:
-        new_j_list.append(j_hash[a_ID])
 
-    if query_time <= al[previous_job_index].appointment_end:
-        t_available = al[previous_job_index].appointment_end
-        start_pos = al[previous_job_index].location
-        start_load = truck.maxCapacity - al[previous_job_index].remaining_capacity
+    unfulfilled_jobIDs.append(new_job.jobID)
+    for i in unfulfilled_jobIDs:
+        print(str(i) + " is in the unfulfilled jobIDs list")
+
+    unfulfilled_jobs_list = []
+    for jobID in unfulfilled_jobIDs:
+        unfulfilled_jobs_list.append(j_hash[jobID])
+
+    print(str(al_previous_jobID) + " is the first previous job")
+
+    #if the first previous job from the query time is not over
+    if query_time <= al[al_previous_job_index].appointment_end:
+        print("We were in the middle of job "+str(al_previous_jobID)+ " when the query came in")
+        t_available = al[al_previous_job_index].appointment_end
+        start_pos = al[al_previous_job_index].location
+        start_load = truck.maxCapacity - al[al_previous_job_index].remaining_capacity
+    #else start the new schedule with the next apointment
     else:
-        t_available = al[appointments_ID_left[0]].appointment_start
-        start_pos =  al[appointments_ID_left[0]].location
-        start_load = truck.maxCapacity - al[appointments_ID_left[0]].remaining_capacity
+        print("We were already on our way to job " + al[al_previous_job_index+1].jobID+" when the query came in")
+        t_available = al[al_previous_job_index+1].appointment_start
+        start_pos =  al[al_previous_job_index+1].location
+        start_load = truck.maxCapacity - (al[al_previous_job_index].remaining_capacity)
+    print("We will start our schedule at: ")
+    print("Time: " + str(t_available))
+    print("Position: "+ str(start_pos))
+    print("Load: " + str(start_load))
 
-    new_schedule = make_schedule(driver, truck, depot, dump, new_j_list, t_available, start_pos, start_load)
+    new_schedule = make_schedule(driver, truck, depot, dump, unfulfilled_jobs_list, t_available, start_pos, start_load)
+    print("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    print("SCHEDULE WITH THE DYNAMIC INSERTION: ")
+    new_schedule.display_appointment_list()
+    print("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
     if new_schedule.find_number_windows_missed() > schedule.find_number_windows_missed() or new_schedule.find_cumulative_miss_time() > schedule.find_cumulative_miss_time():
         print("Unable to insert new job.  returning old schedule.")
         return schedule

@@ -2,3 +2,4 @@
 node_modules/
 .env
 algorithm1_heuristic.pyc
+docker-compose.yml

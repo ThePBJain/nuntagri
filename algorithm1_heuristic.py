@@ -65,6 +65,8 @@ class Schedule:
             print("Arrival: " + str(a.appointment_start))
             print("Departure: " + str(a.appointment_end))
             print("-----------------------------")
+        print("Number of windows missed :" + str(self.find_number_windows_missed()))
+        print("Cumulative miss time: "+ str(self.find_cumulative_miss_time()))
 
     def find_number_windows_missed(self):
         count = 0

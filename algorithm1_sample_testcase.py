@@ -32,7 +32,7 @@ for x in range(0, 15):
 #i = ahnd.Job(9, (1, -2), 5, (16, 18), .5)
 
 
-#k = ahnd.Job(10, (1, -3), 1, (16, 18), .25)
+k = ahnd.Job(10, (1, -3), 1, (16, 18), .25)
 
 #joli = ahnd.JobList([a,b,c,d,e,f,g,h, i])
 joli = ahnd.JobList(testJobs)
@@ -49,5 +49,5 @@ sched1.display_appointment_list()
 print("############################")
 
 #Algo 2
-#sched2 = ahnd.try_to_dynamically_insert_job(driver, truck, depot, dump, sched1, k, 8.8)
-#sched2.display_appointment_list()
+sched2 = ahnd.try_to_dynamically_insert_job(driver, truck, depot, dump, sched1, k, 8.8)
+sched2.display_appointment_list()

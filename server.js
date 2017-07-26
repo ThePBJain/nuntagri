@@ -64,6 +64,20 @@ var geocoder = NodeGeocoder(options);
     		console.log(err);
   		});
 */
+//mongodb database setup
+var mongoose = require('mongoose');
+
+// *** seed the database *** //
+if (process.env.NODE_ENV === 'development') {
+  var seedAdmin = require('./models/seeds/admin.js');
+  var productAdmin = require('./models/seeds/product.js');
+  seedAdmin();
+  productAdmin();
+}
+
+// *** mongo *** //
+app.set('dbUrl', "mongodb://mongo:27017");
+mongoose.connect(app.get('dbUrl'));
 
 //moving on...
 let Wit = null;
@@ -148,12 +162,6 @@ function callSendAPI(messageData) {
     }
   });
 }
-
-// ----------------------------------------------------------------------------
-// Consensus API specific code
-
-// See the POS API reference on Confluence
-// You can put all new connections to Consensus APIs over here
 
 
 

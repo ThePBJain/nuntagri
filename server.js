@@ -918,6 +918,18 @@ const actions = {
 				delete context.fail;
 			}
 			if(name){
+				var User = require('/models/user');
+				User.findOne({ email: name }, function (err, user) {
+					if (err){
+						console.log(err);
+					}else{
+						if(user){
+							console.log("USER FOUND!!!");
+						}else{
+							console.log("User not found");
+						}
+					}
+				});
 				sessions[sessionId].name = name;
 				context.gotName = true;
 			}else{

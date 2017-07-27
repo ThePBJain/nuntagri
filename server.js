@@ -75,10 +75,6 @@ if (process.env.NODE_ENV === 'development') {
   productAdmin();
 }
 
-// *** mongo *** //
-app.set('dbUrl', "mongodb://mongo:27017");
-mongoose.connect(app.get('dbUrl'));
-
 //moving on...
 let Wit = null;
 let log = null;
@@ -1054,6 +1050,12 @@ const witJunk = new Wit({
 
 // Starting our webserver and putting it all together
 const app = express();
+
+// *** mongo *** //
+app.set('dbUrl', "mongodb://mongo:27017");
+mongoose.connect(app.get('dbUrl'));
+
+
 app.use(({method, url}, rsp, next) => {
   rsp.on('finish', () => {
     console.log(`${rsp.statusCode} ${method} ${url}`);

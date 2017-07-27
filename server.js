@@ -914,7 +914,7 @@ const actions = {
 				delete context.fail;
 			}
 			if(name){
-				var User = require('/models/user');
+				var User = require('./models/user');
 				User.findOne({ email: name }, function (err, user) {
 					if (err){
 						console.log(err);

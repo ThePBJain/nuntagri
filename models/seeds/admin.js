@@ -1,4 +1,3 @@
-var passport = require('passport');
 var User = require('../user');
 
 

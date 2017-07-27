@@ -1,5 +1,4 @@
 var Product = require('../product');
-var passport = require('passport');
 
 var seedProduct = function() {
 

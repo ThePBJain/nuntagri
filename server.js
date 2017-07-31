@@ -166,7 +166,22 @@ function callSendAPI(messageData) {
 // See Postman to understand how it works
 // https://developers.facebook.com/docs/messenger-platform/send-api-reference
 
-function sendJobToDirtyDog(data) {
+//collect just the main pieces of information... format the rest
+			/*	order = {
+					name: sessions[sessionId].name,
+					items: sessions[sessionId].items,
+					location: sessions[sessionId].location,
+					phone: phone, +15105799664
+					time: dayTime
+				};*/
+function sendJobToDirtyDog(order) {
+
+	const fname = order.name.split(' ').slice(0, -1).join(' ');
+	const lname = order.name.split(' ').slice(-1).join(' ');
+	const phone = order.phone.substring(2);
+	var d = new Date(order.time);
+	var timeStamp = d.getTime();
+	
 	var options = { method: 'POST',
 	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
 	  headers: 
@@ -174,29 +189,30 @@ function sendJobToDirtyDog(data) {
 		 'content-type': 'application/x-www-form-urlencoded' },
 	  form: 
 	   { fran_id: '2', //constant
-		 jTime: '1501855200', //date converted to unix timecode
+		 jTime: timeStamp, //date converted to unix timecode
 		 trkID: '7', //constant, may change to have for specifically text based submissions
 		 jAddedBy: '69', // our user id (pranav jain)
-		 cFirstName: 'test', // collected by name
-		 cLastName: 'test', // find a way to split this up
-		 cAddress: '123 Test St. Middletown, PA 17112',
-		 cCity: 'Middletown', //you could pull this from geocoder...
-		 cState: 'PA', //you could pull this from geocoder...
-		 cZip: '17112', //you could pull this from geocoder...
-		 cHomeArea: '510', // phone number broken up into parts
-		 cHomePre: '579', // phone number broken up into parts
-		 cHomeSuf: '9664', // phone number broken up into parts
-		 jAddress: '123 Test St. Middletown, PA 17112', //always same as cAddress
-		 jCity: 'Middletown', //umm... you could pull this from geocoder...
-		 jState: 'PA', //umm... you could pull this from geocoder...
-		 jZip: '17112', //umm... you could pull this from geocoder...
-		 jJunkOther: 'Minimum Capable' // items would go here
+		 cFirstName: fname, // collected by name
+		 cLastName: lname, // find a way to split this up
+		 cAddress: order.location.string,
+		 //cCity: 'Middletown', //you could pull this from geocoder...
+		 //cState: 'PA', //you could pull this from geocoder...
+		 //cZip: '17112', //you could pull this from geocoder...
+		 cHomeArea: phone.substring(0,3), // phone number broken up into parts
+		 cHomePre: phone.substring(3,6), // phone number broken up into parts
+		 cHomeSuf: phone.substring(6), // phone number broken up into parts
+		 jAddress: order.location.string, //always same as cAddress
+		 //jCity: 'Middletown', //umm... you could pull this from geocoder...
+		 //jState: 'PA', //umm... you could pull this from geocoder...
+		 //jZip: '17112', //umm... you could pull this from geocoder...
+		 jJunkOther: order.items // items would go here
 		 } };
 
 	request(options, function (error, response, body) {
 	  if (error) throw new Error(error);
 
 	  console.log(body);
+	  //look only for a 200 response code...
 	});
 	
 }
@@ -829,6 +845,9 @@ const actions = {
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
 				
 				console.log(message);
+				
+				//add to dirty dog hauling
+				sendJobToDirtyDog(order);
 				//this is the number you are eventually sending it to: +17173154479
 				//twilio numbers: +17173882677 , +16506811972 
 				//Brandon: +17173297650

@@ -182,7 +182,8 @@ function sendJobToDirtyDog(order) {
 	const phone = order.phone.substring(2);
 	var d = new Date(order.time);
 	var timeStamp = d.getTime();
-	
+	console.log("Date Object: " + d);
+	console.log("Timestamp: " + timeStamp);
 	var options = { method: 'POST',
 	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
 	  headers: 
@@ -209,7 +210,7 @@ function sendJobToDirtyDog(order) {
 		 jJunkOther: order.items // items would go here
 		 } };
 		 
-		 console.log("Options: " + options);
+		 console.log("Options: " + JSON.stringify(options));
 
 	request(options, function (error, response, body) {
 	  if (error) throw new Error(error);

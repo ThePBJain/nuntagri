@@ -260,6 +260,7 @@ const findOrCreateSession = (fbid) => {
 		deliverer: null,
 		items: null, //will be an array for junk hauling
 		location: null,
+		time: null,
 		message: "",
 		text: ""
 	};
@@ -312,6 +313,10 @@ const firstEntityValue = (entities, entity) => {
 */
 const selectDeliverers = (order, sessionId) => {
 	console.log("Selecting the drivers------------------");
+	//change Date object stored in order.time to proper formatting
+	var orderTime = dateFormat(order.time, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+	order.time = orderTime;
+	console.log("Order: " + JSON.stringify(order));
 	var bestdeliverer = null;
 	var closest = 10000;
 	var bestK = null;
@@ -825,12 +830,14 @@ const actions = {
 	junkOrder({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var dayTime = sessions[sessionId].context.foundTime;
+			var dayTime = sessions[sessionId].time;
+			var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 			if(context.fail){
 				delete context.fail;
 			}
 			console.log("dateTime: " + dayTime);
-			if(dayTime){
+			console.log("orderTime: " + orderTime);
+			if(dayTime && orderTime){
 				delete context.fail;
 				
 				//finish order here...
@@ -846,7 +853,7 @@ const actions = {
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
 													"\nItems: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location.string +
-													"\nPhone Number: " + phone + "\nTime: " + dayTime;
+													"\nPhone Number: " + phone + "\nTime: " + orderTime;
 				
 				console.log(message);
 				
@@ -953,9 +960,13 @@ const actions = {
 				//date is coming in wrong because of system time zone
 				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 				
+				//testing by putting date object in here so we can do other things too.
+				sessions[sessionId].time = dayTime;
+				//what to display to user
 				context.foundTime = orderTime;
 				
 				//check to see if time is within 2 hours and fail if it does
+				//this is in hours
 				console.log("This is the differential: " + ((new Date(dayTime)) - (new Date()))/(1000*60*60));
 				console.log("This is what new Object looks like: " + (new Date(dayTime)));
 				if( ((new Date(dayTime)) - (new Date()))/(1000*60*60) < 2.0){

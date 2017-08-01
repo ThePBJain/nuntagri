@@ -215,7 +215,7 @@ function sendJobToDirtyDog(order) {
 	request(options, function (error, response, body) {
 	  if (error) throw new Error(error);
 
-	  console.log(response);
+	  console.log(body);
 	  //look only for a 200 response code...
 	});
 	

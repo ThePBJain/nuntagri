@@ -835,7 +835,7 @@ const actions = {
 			if(context.fail){
 				delete context.fail;
 			}
-			console.log("dateTime: " + dayTime);
+			console.log("dayTime: " + dayTime);
 			console.log("orderTime: " + orderTime);
 			if(dayTime && orderTime){
 				delete context.fail;
@@ -847,8 +847,9 @@ const actions = {
 					items: sessions[sessionId].items,
 					location: sessions[sessionId].location,
 					phone: phone,
-					time: dayTime
+					time: sessions[sessionId].time
 				};
+				console.log("Order: " + JSON.stringify(order));
 				selectDeliverers(order, sessionId);			
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
 													"\nItems: " + sessions[sessionId].items + 

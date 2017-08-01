@@ -175,7 +175,8 @@ function callSendAPI(messageData) {
 					time: dayTime
 				};*/
 function sendJobToDirtyDog(order) {
-
+	console.log("Trying to send job to DIRTY DDOG");
+	console.log(order);
 	const fname = order.name.split(' ').slice(0, -1).join(' ');
 	const lname = order.name.split(' ').slice(-1).join(' ');
 	const phone = order.phone.substring(2);
@@ -207,11 +208,13 @@ function sendJobToDirtyDog(order) {
 		 //jZip: '17112', //umm... you could pull this from geocoder...
 		 jJunkOther: order.items // items would go here
 		 } };
+		 
+		 console.log("Options: " + options);
 
 	request(options, function (error, response, body) {
 	  if (error) throw new Error(error);
 
-	  console.log(body);
+	  console.log(response);
 	  //look only for a 200 response code...
 	});
 	

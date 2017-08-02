@@ -25,7 +25,8 @@ var User = new Schema({
     		},
     		stringLocation: String,
             token: String,
-            time: { type: Date, default: Date.now }
+            time: { type: Date, default: Date.now },
+            assignee: String
         }
     ],
     password: {

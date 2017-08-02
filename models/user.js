@@ -11,22 +11,26 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 var User = new Schema({
-    email: {
+    phoneID: {
         type: String,
         unique: true,
         lowercase: true
     },
-    products: [
+    orders: [
         {
-            productID: String,
-            name: String,
+            items: [{ name: String}],
+            location: {
+        		type: [Number],     // [<longitude>, <latitude>]
+        		index: '2dsphere'   // create the geospatial index
+    		},
+    		stringLocation: String,
             token: String,
             time: { type: Date, default: Date.now }
         }
     ],
     password: {
         type: String,
-        required: true
+        required: false
     },
     admin: {
         type: Boolean,
@@ -36,6 +40,7 @@ var User = new Schema({
         type: String,
         default: 'User'
     },
+    
     stripe: {
         type: String,
         unique: true,

@@ -181,7 +181,7 @@ function sendJobToDirtyDog(order) {
 	const lname = order.name.split(' ').slice(-1).join(' ');
 	const phone = order.phone.substring(2);
 	var d = new Date(order.time.substring(0, (order.time.length-6)));
-	var timeStamp = d.getTime()/1000 + 11400;
+	var timeStamp = d.getTime()/1000;
 	console.log("Date Object: " + d);
 	console.log("Timestamp: " + timeStamp);
 	var options = { method: 'POST',

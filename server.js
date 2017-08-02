@@ -965,8 +965,16 @@ const actions = {
 			console.log("dateTime: " + dayTime);
 			if(dayTime){
 				delete context.fail;
+				//window between 8 - 18
+				var date = new Date(dayTime);
+				date.setMinutes(0);
+				date.setSeconds(0);
+				//to fit time windows that we have set up (2 hours each) from 8 am to 6pm
+				if(date.getHours() % 2 != 0){
+					date.setHours(date.getHours() - 1);
+				}
 				//date is coming in wrong because of system time zone
-				var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+				var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 				
 				//testing by putting date object in here so we can do other things too.
 				sessions[sessionId].time = dayTime;
@@ -975,10 +983,14 @@ const actions = {
 				
 				//check to see if time is within 2 hours and fail if it does
 				//this is in hours
-				console.log("This is the differential: " + ((new Date(dayTime)) - (new Date()))/(1000*60*60));
-				console.log("This is what new Object looks like: " + (new Date(dayTime)));
-				if( ((new Date(dayTime)) - (new Date()))/(1000*60*60) < 2.0){
+				console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
+				console.log("This is what new Object looks like: " + date);
+				if( (date-(new Date()))/(1000*60*60) < 2.0) {
 					console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+					delete context.foundTime;
+					context.fail = true;
+				}else if(date.getHours() < 8 || date.getHours() >= 18){
+					console.log("Out of scope with windows!!!!!!");
 					delete context.foundTime;
 					context.fail = true;
 				}

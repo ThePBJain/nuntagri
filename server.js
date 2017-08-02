@@ -812,6 +812,7 @@ const actions = {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
 			var items = firstEntityValue(entities, 'item');
+			console.log("Entities: " + JSON.stringify(entities));
 			if(context.fail){
 				delete context.fail;
 			}

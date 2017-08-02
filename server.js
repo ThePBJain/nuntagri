@@ -850,7 +850,14 @@ const actions = {
 					time: sessions[sessionId].time
 				};
 				console.log("Order: " + JSON.stringify(order));
-				selectDeliverers(order, sessionId);			
+				
+				//add to dirty dog hauling
+				sendJobToDirtyDog(order);
+				
+				//select deliverer to send it to
+				selectDeliverers(order, sessionId);	
+				
+						
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
 													"\nItems: " + sessions[sessionId].items + 
 													"\nAddress: " + sessions[sessionId].location.string +
@@ -858,8 +865,6 @@ const actions = {
 				
 				console.log(message);
 				
-				//add to dirty dog hauling
-				sendJobToDirtyDog(order);
 				//this is the number you are eventually sending it to: +17173154479
 				//twilio numbers: +17173882677 , +16506811972 
 				//Brandon: +17173297650

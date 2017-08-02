@@ -180,7 +180,7 @@ function sendJobToDirtyDog(order) {
 	const fname = order.name.split(' ').slice(0, -1).join(' ');
 	const lname = order.name.split(' ').slice(-1).join(' ');
 	const phone = order.phone.substring(2);
-	var d = new Date(order.time);
+	var d = new Date(order.time.substring(0, (order.time.length-6)));
 	var timeStamp = d.getTime()/1000;
 	console.log("Date Object: " + d);
 	console.log("Timestamp: " + timeStamp);

@@ -1462,7 +1462,7 @@ function verifyRequestSignature(req, res, buf) {
 //console.log('Listening on :' + PORT + '...');
 
 //create server and put on port 443...
-
+console.log("Trying port: " + PORT);
 if(PORT == 443){
 	var options = {
 		key: fs.readFileSync('privkey.pem'),

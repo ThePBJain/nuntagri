@@ -1149,7 +1149,11 @@ const witJunk = new Wit({
 const app = express();
 
 // *** mongo *** //
-app.set('dbUrl', "mongodb://mongo:27017");
+if (process.env.NODE_ENV === 'development') {
+	app.set('dbUrl', "mongodb://mongo:27018");
+}else{
+	app.set('dbUrl', "mongodb://mongo:27017");
+}
 mongoose.connect(app.get('dbUrl'));
 
 

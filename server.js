@@ -266,7 +266,24 @@ const findOrCreateSession = (fbid) => {
 					console.log(user);
 				}
 			});
+			sessions[sessionId] = {
+				fbid: fbid, // phone number for sms users
+				conversationTime: null,
+				context: {
+
+				},
+				name: user.name,
+				seller: null, //  {list: [{name: product, amount: load}]}
+				buyer: null, // {orders:...
+				deliverer: null, //
+				items: null, //will be an array for junk hauling
+				location: null,
+				time: null,
+				message: "",
+				text: ""
+			};
         }else{
+        	//load old model from mongodb
         	const type = user.userType;
         	sessions[sessionId] = {
 				fbid: fbid, // phone number for sms users
@@ -285,6 +302,8 @@ const findOrCreateSession = (fbid) => {
 				text: ""
 			};
 			sessions[sessionId][type] = user.typeData;
+			//DONT FORGET THIS
+			user.markModified('typeData');
         }
     });
   }
@@ -1338,9 +1357,13 @@ app.get('/junkTwilio', function (req, res) {
 				sessions[sessionId].conversationTime = null;
 				//deleting the entire session...
 				var temp = sessions[sessionId];
+				User.update( {phoneID: sessions[sessionId].fbid}, {
+					name: sessions[sessionId].name
+				}, function(err, numberAffected, rawResponse) {
+   					//handle it
+				});
+				
 				delete sessions[sessionId];
-				sessionId = findOrCreateSession(sender);
-				sessions[sessionId] = temp;
 			}
 			// Updating the user's current session state
 			sessions[sessionId].context = context;

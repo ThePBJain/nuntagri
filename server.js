@@ -256,6 +256,16 @@ const findOrCreateSession = (fbid) => {
             }
         if (!user) {
             //create new model
+			var newUser = new User({
+				phoneID: fbid
+			});
+			newUser.save(function(err, user){
+				if(err){
+					console.log(err);
+				}else{
+					console.log(user);
+				}
+			});
         }else{
         	const type = user.userType;
         	sessions[sessionId] = {
@@ -276,7 +286,7 @@ const findOrCreateSession = (fbid) => {
 			};
 			sessions[sessionId][type] = user.typeData;
         }
-    }
+    });
   }
   return sessionId;
 };

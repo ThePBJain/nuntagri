@@ -41,7 +41,12 @@ var User = new Schema({
         type: String,
         default: 'User'
     },
-    
+    typeData: {
+    	type: Schema.Types.Mixed 
+    },
+    name: {
+    	type: String,
+    },
     stripe: {
         type: String,
         unique: true,

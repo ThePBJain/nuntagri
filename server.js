@@ -235,7 +235,7 @@ function sendJobToDirtyDog(order) {
 // sessionId -> {fbid: facebookUserId, context: sessionState, numItems: ItemsInCart, type: TypeOfItemsInList, list: jsonQueryOfItems, cart: ArrayOfItemsInPreviousCart}
 
 //Set this up to put session as a user db table on mongodb
-
+var User = require('./models/user');
 const sessions = {};
 
 const findOrCreateSession = (fbid) => {
@@ -250,22 +250,33 @@ const findOrCreateSession = (fbid) => {
   if (!sessionId) {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString(); //123456789
-    sessions[sessionId] = {
-		fbid: fbid, // phone number for sms users
-		conversationTime: null,
-		context: {
+    User.findOne({ phoneID: fbid}, function(err, user){
+    	if (err) {
+                console.log(err);
+            }
+        if (!user) {
+            //create new model
+        }else{
+        	const type = user.userType;
+        	sessions[sessionId] = {
+				fbid: fbid, // phone number for sms users
+				conversationTime: null,
+				context: {
 
-		},
-		name: null,
-		seller: null,
-		buyer: null,
-		deliverer: null,
-		items: null, //will be an array for junk hauling
-		location: null,
-		time: null,
-		message: "",
-		text: ""
-	};
+				},
+				name: user.name,
+				seller: null, //  {list: [{name: product, amount: load}]}
+				buyer: null, // {orders:...
+				deliverer: null, //
+				items: null, //will be an array for junk hauling
+				location: null,
+				time: null,
+				message: "",
+				text: ""
+			};
+			sessions[sessionId][type] = user.typeData;
+        }
+    }
   }
   return sessionId;
 };
@@ -1149,11 +1160,7 @@ const witJunk = new Wit({
 const app = express();
 
 // *** mongo *** //
-//if (process.env.NODE_ENV === 'development') {
-//	app.set('dbUrl', "mongodb://mongo:27018");
-//}else{
-	app.set('dbUrl', "mongodb://mongo:27017");
-//}
+app.set('dbUrl', "mongodb://mongo:27017");
 mongoose.connect(app.get('dbUrl'));
 
 

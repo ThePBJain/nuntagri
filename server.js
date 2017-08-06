@@ -250,6 +250,22 @@ const findOrCreateSession = (fbid) => {
   if (!sessionId) {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString(); //123456789
+    sessions[sessionId] = {
+				fbid: fbid, // phone number for sms users
+				conversationTime: null,
+				context: {
+
+				},
+				name: null,
+				seller: null, //  {list: [{name: product, amount: load}]}
+				buyer: null, // {orders:...
+				deliverer: null, //
+				items: null, //will be an array for junk hauling
+				location: null,
+				time: null,
+				message: "",
+				text: ""
+	};
     User.findOne({ phoneID: fbid}, function(err, user){
     	console.log("Made it into here. Found user: " + user);
     	if (err) {

@@ -251,11 +251,13 @@ const findOrCreateSession = (fbid) => {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString(); //123456789
     User.findOne({ phoneID: fbid}, function(err, user){
+    	console.log("Made it into here. Found user: " + user);
     	if (err) {
                 console.log(err);
             }
         if (!user) {
             //create new model
+            console.log("Found no user");
 			var newUser = new User({
 				phoneID: fbid
 			});
@@ -284,6 +286,7 @@ const findOrCreateSession = (fbid) => {
 			};
         }else{
         	//load old model from mongodb
+        	console.log("Found user");
         	const type = user.userType;
         	sessions[sessionId] = {
 				fbid: fbid, // phone number for sms users

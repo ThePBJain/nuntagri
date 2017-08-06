@@ -307,6 +307,7 @@ const findOrCreateSession = (fbid) => {
         }
     });
   }
+  console.log(JSON.stringify(sessions));
   return sessionId;
 };
 

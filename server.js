@@ -1389,10 +1389,11 @@ app.get('/junkTwilio', function (req, res) {
 				});
 				
 				delete sessions[sessionId];
+			}else{
+				// Updating the user's current session state
+				sessions[sessionId].context = context;
+				sessions[sessionId].text = "";
 			}
-			// Updating the user's current session state
-			sessions[sessionId].context = context;
-			sessions[sessionId].text = "";
         })
         .catch((err) => {
 			console.error('Oops! Got an error from Wit: ', err.stack || err);

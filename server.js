@@ -290,7 +290,7 @@ const findOrCreateSession = (fbid) => {
 				context: {
 
 				},
-				name: user.name,
+				name: null,
 				seller: null, //  {list: [{name: product, amount: load}]}
 				buyer: null, // {orders:...
 				deliverer: null, //

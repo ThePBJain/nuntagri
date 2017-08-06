@@ -1361,6 +1361,11 @@ app.get('/junkTwilio', function (req, res) {
 					name: sessions[sessionId].name
 				}, function(err, numberAffected, rawResponse) {
    					//handle it
+   					if(err){
+   						console.log("err: " + err);
+   					}else{
+   						console.log("Response to updating user: " + rawResponse);
+   					}
 				});
 				
 				delete sessions[sessionId];

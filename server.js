@@ -1233,7 +1233,7 @@ app.get('/webhook', (req, res) => {
 //to test if it works...
 
 app.get('/', function (req, res) {
-	//redirect to website
+	//redirect to website test
   res.redirect('http://nuntagri.com');
 });
 

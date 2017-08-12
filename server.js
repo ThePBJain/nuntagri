@@ -1233,8 +1233,8 @@ app.get('/webhook', (req, res) => {
 //to test if it works...
 
 app.get('/', function (req, res) {
-  res.send('Hello Pranav... What are you doing here?\n');
-  //maybe get this to work with website
+	//redirect to website
+  res.redirect('http://nuntagri.com');
 });
 
 //message handler for twilio

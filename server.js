@@ -46,9 +46,9 @@ var numJunkInvoices = 1;
 var NodeGeocoder = require('node-geocoder');
 var options = {
   provider: 'openstreetmap',
- 
-  // Optional depending on the providers 
-  httpAdapter: 'https', // Default 
+
+  // Optional depending on the providers
+  httpAdapter: 'https', // Default
   email: 'pranajain@gmail.com', // dunno
   formatter: null         // 'gpx', 'string', ...
 };
@@ -66,6 +66,9 @@ var geocoder = NodeGeocoder(options);
 */
 //mongodb database setup
 var mongoose = require('mongoose');
+
+// *** config file *** //
+var config = require('./_config');
 
 // *** seed the database *** //
 if (process.env.NODE_ENV === 'development') {
@@ -94,6 +97,7 @@ const PORT = process.env.PORT || 443; //443
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;
 const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
+const WIT_TEST_TOKEN = process.env.WIT_TEST_TOKEN;
 // Messenger API parameters
 const FB_PAGE_ID = process.env.FB_PAGE_ID;
 if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
@@ -188,10 +192,10 @@ function sendJobToDirtyDog(order) {
 	console.log("Timestamp: " + timeStamp);
 	var options = { method: 'POST',
 	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
-	  headers: 
-	   { 
+	  headers:
+	   {
 		 'content-type': 'application/x-www-form-urlencoded' },
-	  form: 
+	  form:
 	   { fran_id: '2', //constant
 		 jTime: timeStamp, //date converted to unix timecode
 		 trkID: '7', //constant, may change to have for specifically text based submissions
@@ -211,7 +215,7 @@ function sendJobToDirtyDog(order) {
 		 //jZip: '17112', //umm... you could pull this from geocoder...
 		 jJunkOther: order.items // items would go here
 		 } };
-		 
+
 		 console.log("Options: " + JSON.stringify(options));
 
 	request(options, function (error, response, body) {
@@ -220,7 +224,7 @@ function sendJobToDirtyDog(order) {
 	  console.log(body);
 	  //look only for a 200 response code...
 	});
-	
+
 }
 
 
@@ -336,12 +340,13 @@ const firstEntityValue = (entities, entity) => {
   const val = entities && entities[entity] &&
     Array.isArray(entities[entity]) &&
     entities[entity].length > 0 &&
-    entities[entity][0].value
-  ;
+    entities[entity][0];
   if (!val) {
     return null;
   }
-  return typeof val === 'object' ? val.value : val;
+  console.log("firstEntity: " + val);
+  //return typeof val === 'object' ? val.value : val;
+  return val;
 };
 
 
@@ -392,13 +397,13 @@ const selectDeliverers = (order, sessionId) => {
 				bestK = k;
 			}
 	}
-	
+
 	});
 	console.log("BestDeliverer: " + bestdeliverer)
 	if(bestdeliverer){
 		console.log("Best driver is: " + sessions[bestK])
 		var isEmpty = bestdeliverer.queue < 1;
-	
+
 		//if it is empty start queue movement after pushing order in.
 		bestdeliverer.queue.push(order);
 		sessions[bestK].context.deliverer = true;
@@ -409,10 +414,10 @@ const selectDeliverers = (order, sessionId) => {
 				//sms twilio
 				var phone = "+" + (sessions[bestK].fbid).substring(6);
 				var message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
-														"\nItems: " + bestdeliverer.queue[0].items + 
+														"\nItems: " + bestdeliverer.queue[0].items +
 														"\nAddress: " + bestdeliverer.queue[0].location.string +
-														"\nPhone Number: " + bestdeliverer.queue[0].phone + 
-														"\nTime: " + bestdeliverer.queue[0].time + 
+														"\nPhone Number: " + bestdeliverer.queue[0].phone +
+														"\nTime: " + bestdeliverer.queue[0].time +
 														"\nText \"done\" or \"complete\" when job has been finished";
 				//will have to change this so can work from different phone numbers depending on who's using this
 				console.log("Sending Message to deliverer");
@@ -426,12 +431,12 @@ const selectDeliverers = (order, sessionId) => {
 			}else{
 				//facebook
 				var sender = sessions[bestK].fbid;
-				var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
+				var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name +
 														"\nAddress: " + bestdeliverer.queue[0].start +
 														"\nContact at: " + sessions[sessionId].fbid;
 				fbMessage(sender, message);
 			}
-		
+
 		}
 	}
 
@@ -498,7 +503,7 @@ function generateInvoice(invoice, filename, success, error) {
 };
 
 generateInvoice(invoice, 'invoice.pdf', function() {
-	
+
 	console.log("Saved invoice to invoice.pdf");
 	sendEmail("pranajain@gmail.com");
 }, function(error) {
@@ -508,17 +513,17 @@ function sendEmail(userEmail){
 	var mail = new helper.Mail();
 	var email = new helper.Email('invoice@nuntagri.com', 'NuntAgri Billing');
 	mail.setFrom(email);
-	
+
 	mail.setSubject('Invoice from NuntAgri');
-	
+
 	var personalization = new helper.Personalization();
 	email = new helper.Email(userEmail);
 	personalization.addTo(email);
 	mail.addPersonalization(personalization);
-	
+
 	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body>Invoice: <iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
 	mail.addContent(content);
-	
+
 	var attachment = new helper.Attachment();
 	var file = fs.readFileSync('invoice.pdf');
 	var base64File = new Buffer(file).toString('base64');
@@ -528,7 +533,7 @@ function sendEmail(userEmail){
 	attachment.setDisposition('inline');//inline
 	attachment.setContentId("139db99fdb5c3704");
 	mail.addAttachment(attachment);
-	
+
 	var sgRequest = sg.emptyRequest({
 	  	method: 'POST',
 	  	path: '/v3/mail/send',
@@ -761,12 +766,12 @@ const actions = {
         				latitude: res[0].latitude,
         				longitude: res[0].longitude
         			}
-        			
+
         			sessions[sessionId].location = location;
-        			
+
 					delete context.fail;
 					context.success = true;
-					
+
     			}else{
     				//should do this but will accept for now
     				//delete context.success;
@@ -804,7 +809,7 @@ const actions = {
 			//for incomplete, not done, etc...
 			if(statement){
 				if(statement.includes("in") || statement.includes("not")){
-				
+
 							/*
 								//dirty dog
 								queue: [
@@ -827,7 +832,7 @@ const actions = {
 												phone: phone,
 												time: dayTime
 											}
-											
+
 					*/
 					//same as below but with statement sent to leland saying order cancelled
 				}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
@@ -837,18 +842,18 @@ const actions = {
 					if( deliverer.queue[0]){
 						var order = deliverer.queue[0];
 						message = "Next order by user: \n" + "Name: " + order.name +
-														"\nItems: " + order.items + 
+														"\nItems: " + order.items +
 														"\nAddress: " + order.location.string +
-														"\nPhone Number: " + order.phone + 
-														"\nTime: " + order.time + 
+														"\nPhone Number: " + order.phone +
+														"\nTime: " + order.time +
 														"\nText \"done\" or \"complete\" when job has been finished";
 					}else{
 						message = "Your job queue is currently empty. You can either wait for another job or call it a day! ";
 					}
-												
+
 					//driver's phone
 					var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				
+
 					//send message to driver with order or "empty job queue" message.
 					client.messages
 					.create({
@@ -863,7 +868,7 @@ const actions = {
 					});
 				}
 			}
-			
+
 			context.complete = true;
 			return resolve(context);
 		});
@@ -880,9 +885,9 @@ const actions = {
 			if(items){
 				delete context.fail;
 				sessions[sessionId].items = items;
-				
-				context.missingAddress = true; 
-				
+
+				context.missingAddress = true;
+
 			}else{
 				delete context.missingAddress;
 				context.fail = true;
@@ -902,7 +907,7 @@ const actions = {
 			console.log("orderTime: " + orderTime);
 			if(dayTime && orderTime){
 				delete context.fail;
-				
+
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var order = {
@@ -913,23 +918,23 @@ const actions = {
 					time: sessions[sessionId].time
 				};
 				console.log("Order: " + JSON.stringify(order));
-				
+
 				//add to dirty dog hauling
 				sendJobToDirtyDog(order);
-				
+
 				//select deliverer to send it to
-				selectDeliverers(order, sessionId);	
-				
-						
+				selectDeliverers(order, sessionId);
+
+
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
-													"\nItems: " + sessions[sessionId].items + 
+													"\nItems: " + sessions[sessionId].items +
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + orderTime;
-				
+
 				console.log(message);
-				
+
 				//this is the number you are eventually sending it to: +17173154479
-				//twilio numbers: +17173882677 , +16506811972 
+				//twilio numbers: +17173882677 , +16506811972
 				//Brandon: +17173297650
 				const rate = 5.0; //$5 per lead sent
 				client.messages
@@ -964,14 +969,14 @@ const actions = {
 						};
       					console.log("------------------Charging Dirty Dog------------------");
       					console.log("Leads: " + numJunkLeadsSent);
-      					
+
       					//get customer and charge him
-      					stripe.customers.list({ 
+      					stripe.customers.list({
       							limit: 3,
       							created: {
       								lt: "1499552052"
       							}
-      					
+
   							 },
   						function(err, customers) {
     						// asynchronously called
@@ -1000,9 +1005,9 @@ const actions = {
 								});
 							}
   						});
-      					
+
       				}
-      				
+
     			}).catch(function(err) {
       				console.error('Could not send message');
       				console.error(err);
@@ -1036,12 +1041,12 @@ const actions = {
 				}
 				//date is coming in wrong because of system time zone
 				var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
-				
+
 				//testing by putting date object in here so we can do other things too.
 				sessions[sessionId].time = dayTime;
 				//what to display to user
 				context.foundTime = orderTime;
-				
+
 				//check to see if time is within 2 hours and fail if it does
 				//this is in hours
 				console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
@@ -1122,10 +1127,10 @@ const actions = {
 				//finish order here... do fbmessage or sms depending on their fbid "100011"
 				//fbMessage(sender, 'Added item to cart #' + CART);
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items +
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
-													
+
 				console.log(message);
 				//this is the number you are eventually sending it to: +17176483389
 				client.messages
@@ -1205,11 +1210,18 @@ const witJunk = new Wit({
   logger: new log.Logger(log.INFO)
 });
 
+//setting up Test bot
+const witTest = new Wit({
+  accessToken: WIT_TEST_TOKEN,
+  actions,
+  logger: new log.Logger(log.INFO)
+});
+
 // Starting our webserver and putting it all together
 const app = express();
 
 // *** mongo *** //
-app.set('dbUrl', "mongodb://mongo:27017");
+app.set('dbUrl', config.mongoURI[process.env.NODE_ENV]);
 mongoose.connect(app.get('dbUrl'));
 
 
@@ -1220,6 +1232,7 @@ app.use(({method, url}, rsp, next) => {
   next();
 });
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // Webhook setup
 app.get('/webhook', (req, res) => {
@@ -1234,11 +1247,12 @@ app.get('/webhook', (req, res) => {
 
 app.get('/', function (req, res) {
 	//redirect to website test
-  res.redirect('http://nuntagri.com');
+  //res.redirect('http://nuntagri.com');
+  res.send("Hi PJ");
 });
 
 //message handler for twilio
-// post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
 app.get('/twilio', function (req, res) {
 	var text = req.query.Body; //message from twilio to send to Wit.
@@ -1259,7 +1273,7 @@ app.get('/twilio', function (req, res) {
 	const sessionId = findOrCreateSession(sender);
 	if(text){
 		// We received a text message
-			
+
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
         wit.runActions(
@@ -1280,7 +1294,7 @@ app.get('/twilio', function (req, res) {
 			// if (context['done']) {
 			//   delete sessions[sessionId];
 			// }
-			
+
 			//Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
 			console.log("Context: " + JSON.stringify(context));
@@ -1302,7 +1316,268 @@ app.get('/twilio', function (req, res) {
 });
 
 //message handler for twilio
-// post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
+//find a way to fix that so we dont have this issue.
+app.get('/newMethod', function (req, res) {
+	var text = req.query.Body; //message from twilio to send to Wit.
+	const twimlResp = new MessagingResponse();
+	//console.log(req);
+	console.log("\n\n Test: " + text);
+	//console.log("\n Query:" + JSON.stringify(req.query));
+	// We retrieve the user's current session, or create one if it doesn't exist
+	// This is needed for our bot to figure out the conversation history
+	//figure out how to fix sender to be twilio only
+	var sender = req.query.From;
+			// binary for #
+	sender = "100011" + sender.substring(1);
+	console.log("Sender: " + sender);
+	var sessionId = findOrCreateSession(sender);
+	console.log("0. Sessions looks like: " + JSON.stringify(sessions));
+	//check to reset context
+	//if conversationTime == null
+	if(!sessions[sessionId].conversationTime){
+		console.log("Found no time");
+		//new conversation
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
+		//new conversation if 10 minutes has elapsed
+		console.log("Found that 10 minutes elapsed");
+		//testing deleting the entire session...
+		var temp = sessions[sessionId];
+		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
+		delete sessions[sessionId];
+		sessionId = findOrCreateSession(sender);
+		sessions[sessionId] = temp;
+		sessions[sessionId].context = {};
+		console.log("4. Sessions looks like: " + JSON.stringify(sessions));
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000
+	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
+	sessions[sessionId].text = text;
+	if(text){
+		// We received a text message
+
+        // Let's forward the message to the Wit.ai Bot Engine
+        // This will run all actions until our bot has nothing left to do
+        wit.message(question).then(({entities}) => {
+          const intent = firstEntityValue(entities, 'intent');
+          if (!intent) {
+            // use app data, or a previous context to decide how to fallback
+            return;
+          }
+          // Our bot did everything it has to do.
+    			// Now it's waiting for further messages to proceed.
+    			console.log('Waiting for next user messages');
+    			res.writeHead(200, {'Content-Type': 'text/xml'});
+    			twimlResp.message(sessions[sessionId].message);
+    			res.end(twimlResp.toString());
+    			sessions[sessionId].message = "";
+    			// Based on the session state, you might want to reset the session.
+    			// This depends heavily on the business logic of your bot.
+    			// Example:
+    			// if (context['done']) {
+    			//   delete sessions[sessionId];
+    			// }
+
+    			//Our logic is: if we have had success, failure, a final item, or we updated cart...
+    			//reset the context
+    			console.log("Context: " + JSON.stringify(context));
+    			if(context.complete){
+    				context = {};
+    				//remove time
+    				sessions[sessionId].conversationTime = null;
+    				//deleting the entire session...
+    				var temp = sessions[sessionId];
+    				User.update( {phoneID: sessions[sessionId].fbid}, {
+    					name: sessions[sessionId].name
+    				}, function(err, numberAffected, rawResponse) {
+       					//handle it
+       					if(err){
+       						console.log("err: " + err);
+       					}else{
+       						console.log("Response to updating user: " + rawResponse);
+       					}
+    				});
+
+    				delete sessions[sessionId];
+    			}else{
+    				// Updating the user's current session state
+    				sessions[sessionId].context = context;
+    				sessions[sessionId].text = "";
+    			}
+          switch (intent.value) {
+            case 'appt_make':
+              console.log('🤖 > Okay, making an appointment');
+              res.send('🤖 > Okay, making an appointment');
+              break;
+            case 'appt_show':
+                console.log('🤖 > Okay, showing appointments');
+                res.send('🤖 > Okay, showing appointments');
+                break;
+            default:
+              console.log(`🤖  ${intent.value}`);
+              res.send(`🤖  ${intent.value}`);
+              break;
+          }
+        });
+
+	}else{
+			console.log('Failed to read text from twilio!!!');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message("Could not read your text.");
+			res.end(twimlResp.toString());
+	}
+});
+
+//message handler for twilio
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
+//find a way to fix that so we dont have this issue.
+app.post('/testing', function (req, res) {
+  var text = req.body.Body; //message from twilio to send to Wit.
+	const twimlResp = new MessagingResponse();
+	//console.log(req);
+	console.log("\n\n Test: " + text);
+	//console.log("\n Query:" + JSON.stringify(req.query));
+	// We retrieve the user's current session, or create one if it doesn't exist
+	// This is needed for our bot to figure out the conversation history
+	//figure out how to fix sender to be twilio only
+	var sender = req.body.From;
+			// binary for #
+	sender = "100011" + sender.substring(1);
+	console.log("Sender: " + sender);
+	var sessionId = findOrCreateSession(sender);
+  console.log("0. Sessions looks like: " + JSON.stringify(sessions));
+	//check to reset context
+	//if conversationTime == null
+	if(!sessions[sessionId].conversationTime){
+		console.log("Found no time");
+		//new conversation
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
+		//new conversation if 10 minutes has elapsed
+		console.log("Found that 10 minutes elapsed");
+		//testing deleting the entire session...
+		var temp = sessions[sessionId];
+		delete sessions[sessionId];
+		sessionId = findOrCreateSession(sender);
+		sessions[sessionId] = temp;
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000
+	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
+	sessions[sessionId].text = text;
+
+
+
+	if(text){
+		// We received a text message
+
+        // Let's forward the message to the Wit.ai Bot Engine
+        // This will run all actions until our bot has nothing left to do
+        return witTest.message(text).then(({entities}) => {
+          const intent = firstEntityValue(entities, 'intent');
+          const greeting = firstEntityValue(entities, 'greetings');
+          const junkGreeting = firstEntityValue(entities, 'junkGreeting');
+          const quote = firstEntityValue(entities, 'quote');
+          const polarAns = firstEntityValue(entities, 'polarAns');
+          const dateTime = firstEntityValue(entities, 'datetime');
+          const contact = firstEntityValue(entities, 'contact');
+          const location = firstEntityValue(entities, 'location');
+          var context = sessions[sessionId].context;
+          if (!intent) {
+            // use app data, or a previous context to decide how to fallback
+            console.log("No intent");
+            console.log('Failed to read text from twilio!!!');
+      			res.writeHead(200, {'Content-Type': 'text/xml'});
+      			twimlResp.message("Could not read your text.");
+      			res.end(twimlResp.toString());
+            return;
+          }
+          const recipientId = sessions[sessionId].fbid;
+          if(intent.value)
+          switch (intent.value) {
+            case 'app_make':
+              console.log('🤖 > Okay, making an appointment');
+              if(recipientId.substring(0,6) == "100011"){
+          			sessions[sessionId].message += ("\n" + '> Okay, making an appointment');
+              }
+              //res.send('🤖 > Okay, making an appointment');
+              break;
+            case 'app_show':
+              console.log('🤖 > Okay, showing appointments');
+              if(recipientId.substring(0,6) == "100011"){
+          			sessions[sessionId].message += ("\n" + '> Okay, showing appointments');
+              }
+              break;
+            default:
+              console.log(`🤖  ${intent.value}`);
+              if(recipientId.substring(0,6) == "100011"){
+          			sessions[sessionId].message += ("\n" + `>  ${intent.value}`);
+              }
+              break;
+          }
+
+          console.log('Waiting for next user messages');
+    			res.writeHead(200, {'Content-Type': 'text/xml'});
+    			twimlResp.message(sessions[sessionId].message);
+    			res.end(twimlResp.toString());
+    			sessions[sessionId].message = "";
+
+
+
+          // Based on the session state, you might want to reset the session.
+    			// This depends heavily on the business logic of your bot.
+    			// Example:
+    			// if (context['done']) {
+    			//   delete sessions[sessionId];
+    			// }
+
+    			//Our logic is: if we have had success, failure, a final item, or we updated cart...
+    			//reset the context
+          console.log("Context: " + JSON.stringify(context));
+    			if(context.complete){
+    				context = {};
+    				//remove time
+    				sessions[sessionId].conversationTime = null;
+    				//deleting the entire session...
+    				var temp = sessions[sessionId];
+    				User.update( {phoneID: sessions[sessionId].fbid}, {
+    					name: sessions[sessionId].name
+    				}, function(err, numberAffected, rawResponse) {
+       					//handle it
+       					if(err){
+       						console.log("err: " + err);
+       					}else{
+       						console.log("Response to updating user: " + rawResponse);
+       					}
+    				});
+
+    				delete sessions[sessionId];
+    			}else{
+    				// Updating the user's current session state
+    				sessions[sessionId].context = context;
+    				sessions[sessionId].text = "";
+    			}
+        });
+  }else{
+			console.log('Failed to read text from twilio!!!');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message("Could not read your text.");
+			res.end(twimlResp.toString());
+	}
+
+});
+
+//message handler for twilio
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
 app.get('/junkTwilio', function (req, res) {
 	var text = req.query.Body; //message from twilio to send to Wit.
@@ -1341,12 +1616,12 @@ app.get('/junkTwilio', function (req, res) {
 		//set time
 		sessions[sessionId].conversationTime = new Date();
 	}
-	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000 
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000
 	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
 	sessions[sessionId].text = text;
 	if(text){
 		// We received a text message
-			
+
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
         witJunk.runActions(
@@ -1367,7 +1642,7 @@ app.get('/junkTwilio', function (req, res) {
 			// if (context['done']) {
 			//   delete sessions[sessionId];
 			// }
-			
+
 			//Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
 			console.log("Context: " + JSON.stringify(context));
@@ -1387,7 +1662,7 @@ app.get('/junkTwilio', function (req, res) {
    						console.log("Response to updating user: " + rawResponse);
    					}
 				});
-				
+
 				delete sessions[sessionId];
 			}else{
 				// Updating the user's current session state

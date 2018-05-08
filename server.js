@@ -552,6 +552,268 @@ function sendEmail(userEmail){
 // Our bot actions
 // Write new actions over here that will be called by Wit.ai stories
 //todo: delete success and fail context markers in beginning of each attempt
+
+
+function items(sessionId, context, entities) {
+  var item = firstEntityValue(entities, 'item');
+  console.log("Entities: " + JSON.stringify(entities));
+  if(context.fail){
+    delete context.fail;
+  }
+  console.log("Items: " + item.value);
+  if(item.value){
+    delete context.fail;
+    sessions[sessionId].items = item.value; //may change this to include an array of items...
+
+    context.missingAddress = true;
+
+  }else{
+    delete context.missingAddress;
+    context.fail = true;
+  }
+  //return the resolution of the context...
+}
+
+function verifyAddress(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+    var loc = firstEntityValue(entities, 'location')
+    console.log("Location understood by wit.ai: " + loc.value);
+    if(loc){
+    geocoder.geocode(loc)
+      .then(function(res) {
+        console.log(res);
+        if(res.length != 0){
+          console.log("We found the geolocation.");
+            var location = {
+              string: loc.value,
+              latitude: res[0].latitude,
+              longitude: res[0].longitude
+            }
+
+            sessions[sessionId].location = location;
+
+        delete context.fail;
+        context.success = true;
+
+        }else{
+          //should do this but will accept for now
+          //delete context.success;
+        //context.fail = true;
+        var location = {
+              string: loc.value,
+              latitude: 0.0,
+              longitude: 0.0
+            }
+            sessions[sessionId].location = location;
+            delete context.fail;
+        context.success = true;
+        }
+        //sessions[sessionId].location = loc;
+      }).catch(function(err) {
+        console.log(err);
+        delete context.success;
+      context.fail = true;
+      });
+    }else{
+      console.log("Could not identify location from wit.ai");
+      delete context.success;
+      context.fail = true;
+    }
+}
+function checkDateTime(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+    var dayTime = firstEntityValue(entities, 'datetime');
+    if(context.fail){
+      delete context.fail;
+    }
+    console.log("dateTime: " + dayTime.value);
+    if(dayTime.value){
+      delete context.fail;
+      //window between 8 - 18
+      var date = new Date(dayTime.value);
+      date.setMinutes(0);
+      date.setSeconds(0);
+      //to fit time windows that we have set up (2 hours each) from 8 am to 6pm
+      if(date.getHours() % 2 != 0){
+        date.setHours(date.getHours() - 1);
+      }
+      //date is coming in wrong because of system time zone
+      var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+
+      //testing by putting date object in here so we can do other things too.
+      sessions[sessionId].time = dayTime.value;
+      //what to display to user
+      context.foundTime = orderTime;
+
+      //check to see if time is within 2 hours and fail if it does
+      //this is in hours
+      console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
+      console.log("This is what new Object looks like: " + date);
+      if( (date-(new Date()))/(1000*60*60) < 2.0) {
+        console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        delete context.foundTime;
+        context.fail = true;
+      }else if(date.getHours() < 8 || date.getHours() >= 18){
+        console.log("Out of scope with windows!!!!!!");
+        delete context.foundTime;
+        context.fail = true;
+      }
+    }else{
+      delete context.complete;
+      context.fail = true;
+    }
+}
+function setName(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+    var name = firstEntityValue(entities, 'contact');
+    name = sessions[sessionId].text;
+    if(context.fail){
+      delete context.fail;
+    }
+    if(name){
+      var User = require('./models/user');
+      User.findOne({ email: name }, function (err, user) {
+        if (err){
+          console.log(err);
+        }else{
+          if(user){
+            console.log("USER FOUND!!!");
+          }else{
+            console.log("User not found");
+          }
+        }
+      });
+      sessions[sessionId].name = name;
+      context.gotName = true;
+    }else{
+      context.fail = true;
+    }
+    console.log("name: " + name);
+}
+function junkOrder(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+    var dayTime = sessions[sessionId].time;
+    var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+    if(context.fail){
+      delete context.fail;
+    }
+    console.log("dayTime: " + dayTime);
+    console.log("orderTime: " + orderTime);
+    if(dayTime && orderTime){
+      delete context.fail;
+
+      //finish order here...
+      var phone = "+" + (sessions[sessionId].fbid).substring(6);
+      var order = {
+        name: sessions[sessionId].name,
+        items: sessions[sessionId].items,
+        location: sessions[sessionId].location,
+        phone: phone,
+        time: sessions[sessionId].time
+      };
+      console.log("Order: " + JSON.stringify(order));
+
+      //add to dirty dog hauling
+      sendJobToDirtyDog(order);
+
+      //select deliverer to send it to
+      selectDeliverers(order, sessionId);
+
+
+      var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
+                        "\nItems: " + sessions[sessionId].items +
+                        "\nAddress: " + sessions[sessionId].location.string +
+                        "\nPhone Number: " + phone + "\nTime: " + orderTime;
+
+      console.log(message);
+
+      //this is the number you are eventually sending it to: +17173154479
+      //twilio numbers: +17173882677 , +16506811972
+      //Brandon: +17173297650
+      const rate = 5.0; //$5 per lead sent
+      client.messages
+        .create({
+          to: '+17173154479',
+          from: '+17173882677 ',
+          body: message
+        }).then(function(message) {
+            console.log(message.sid);
+            //update quote
+            numJunkLeadsSent++;
+            if(numJunkLeadsSent >= 20){
+              const leadsCharged = numJunkLeadsSent;
+              const invoiceNum = "INV-"+ numJunkInvoices;
+              //generate an Invoice
+              var invoice = {
+            logo: "https://scontent.fsnc1-1.fna.fbcdn.net/v/t1.0-9/19875336_1034769596658333_6527658905718200604_n.png?oh=f382576eb216f096a0760676ebecb0fd&oe=59C3A944",
+            from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
+            to: "Dirty Dog Hauling",
+            currency: "usd",
+            number: invoiceNum,
+            payment_terms: "Auto-Billed - Do Not Pay",
+            items: [
+              {
+                name: "Leads from NuntAgri ",
+                quantity: leadsCharged,
+                unit_cost: rate
+              }
+            ],
+            notes: "You should be emailed a receipt for this shortly.",
+            terms: "No need to submit payment. You will be auto-billed for this invoice."
+          };
+              console.log("------------------Charging Dirty Dog------------------");
+              console.log("Leads: " + numJunkLeadsSent);
+
+              //get customer and charge him
+              stripe.customers.list({
+                  limit: 3,
+                  created: {
+                    lt: "1499552052"
+                  }
+
+               },
+            function(err, customers) {
+              // asynchronously called
+              if(err){
+                console.log(err);
+              }else{
+                const customer = customers.data[0];
+                generateInvoice(invoice, 'invoice.pdf', function() {
+                console.log("Saved invoice to invoice.pdf");
+                sendEmail(customer.email);
+              }, function(error) {
+                console.error(error);
+              });
+                stripe.charges.create({
+                  amount: leadsCharged*rate*100,
+                  currency: "usd",
+                  customer: customer.id // Previously stored, then retrieved
+              }, function(err, charge) {
+                  // asynchronously called
+                  if(err){
+                    console.log(err);
+                  }else{
+                    numJunkLeadsSent -= leadsCharged;
+                    console.log("Leads (should be 0): " + numJunkLeadsSent);
+                  }
+              });
+            }
+            });
+
+            }
+
+        }).catch(function(err) {
+            console.error('Could not send message');
+            console.error(err);
+        });
+      delete context.fail;
+      context.complete = phone;
+    }else{
+      delete context.complete;
+      context.fail = true;
+    }
+}
+
 const actions = {
   send({sessionId}, {text}) {
     // Our bot has something to say!
@@ -1318,124 +1580,6 @@ app.get('/twilio', function (req, res) {
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
-app.get('/newMethod', function (req, res) {
-	var text = req.query.Body; //message from twilio to send to Wit.
-	const twimlResp = new MessagingResponse();
-	//console.log(req);
-	console.log("\n\n Test: " + text);
-	//console.log("\n Query:" + JSON.stringify(req.query));
-	// We retrieve the user's current session, or create one if it doesn't exist
-	// This is needed for our bot to figure out the conversation history
-	//figure out how to fix sender to be twilio only
-	var sender = req.query.From;
-			// binary for #
-	sender = "100011" + sender.substring(1);
-	console.log("Sender: " + sender);
-	var sessionId = findOrCreateSession(sender);
-	console.log("0. Sessions looks like: " + JSON.stringify(sessions));
-	//check to reset context
-	//if conversationTime == null
-	if(!sessions[sessionId].conversationTime){
-		console.log("Found no time");
-		//new conversation
-		sessions[sessionId].context = {};
-		//set time
-		sessions[sessionId].conversationTime = new Date();
-	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
-		//new conversation if 10 minutes has elapsed
-		console.log("Found that 10 minutes elapsed");
-		//testing deleting the entire session...
-		var temp = sessions[sessionId];
-		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
-		delete sessions[sessionId];
-		sessionId = findOrCreateSession(sender);
-		sessions[sessionId] = temp;
-		sessions[sessionId].context = {};
-		console.log("4. Sessions looks like: " + JSON.stringify(sessions));
-		//set time
-		sessions[sessionId].conversationTime = new Date();
-	}
-	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000
-	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
-	sessions[sessionId].text = text;
-	if(text){
-		// We received a text message
-
-        // Let's forward the message to the Wit.ai Bot Engine
-        // This will run all actions until our bot has nothing left to do
-        wit.message(question).then(({entities}) => {
-          const intent = firstEntityValue(entities, 'intent');
-          if (!intent) {
-            // use app data, or a previous context to decide how to fallback
-            return;
-          }
-          // Our bot did everything it has to do.
-    			// Now it's waiting for further messages to proceed.
-    			console.log('Waiting for next user messages');
-    			res.writeHead(200, {'Content-Type': 'text/xml'});
-    			twimlResp.message(sessions[sessionId].message);
-    			res.end(twimlResp.toString());
-    			sessions[sessionId].message = "";
-    			// Based on the session state, you might want to reset the session.
-    			// This depends heavily on the business logic of your bot.
-    			// Example:
-    			// if (context['done']) {
-    			//   delete sessions[sessionId];
-    			// }
-
-    			//Our logic is: if we have had success, failure, a final item, or we updated cart...
-    			//reset the context
-    			console.log("Context: " + JSON.stringify(context));
-    			if(context.complete){
-    				context = {};
-    				//remove time
-    				sessions[sessionId].conversationTime = null;
-    				//deleting the entire session...
-    				var temp = sessions[sessionId];
-    				User.update( {phoneID: sessions[sessionId].fbid}, {
-    					name: sessions[sessionId].name
-    				}, function(err, numberAffected, rawResponse) {
-       					//handle it
-       					if(err){
-       						console.log("err: " + err);
-       					}else{
-       						console.log("Response to updating user: " + rawResponse);
-       					}
-    				});
-
-    				delete sessions[sessionId];
-    			}else{
-    				// Updating the user's current session state
-    				sessions[sessionId].context = context;
-    				sessions[sessionId].text = "";
-    			}
-          switch (intent.value) {
-            case 'appt_make':
-              console.log('🤖 > Okay, making an appointment');
-              res.send('🤖 > Okay, making an appointment');
-              break;
-            case 'appt_show':
-                console.log('🤖 > Okay, showing appointments');
-                res.send('🤖 > Okay, showing appointments');
-                break;
-            default:
-              console.log(`🤖  ${intent.value}`);
-              res.send(`🤖  ${intent.value}`);
-              break;
-          }
-        });
-
-	}else{
-			console.log('Failed to read text from twilio!!!');
-			res.writeHead(200, {'Content-Type': 'text/xml'});
-			twimlResp.message("Could not read your text.");
-			res.end(twimlResp.toString());
-	}
-});
-
-//message handler for twilio
-// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
-//find a way to fix that so we dont have this issue.
 app.post('/testing', function (req, res) {
   var text = req.body.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
@@ -1482,47 +1626,71 @@ app.post('/testing', function (req, res) {
 
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
-        return witTest.message(text).then(({entities}) => {
+        return witJunk.message(text).then(({entities}) => {
           const intent = firstEntityValue(entities, 'intent');
           const greeting = firstEntityValue(entities, 'greetings');
           const junkGreeting = firstEntityValue(entities, 'junkGreeting');
           const quote = firstEntityValue(entities, 'quote');
+          const item = firstEntityValue(entities, 'item');
           const polarAns = firstEntityValue(entities, 'polarAns');
           const dateTime = firstEntityValue(entities, 'datetime');
           const contact = firstEntityValue(entities, 'contact');
           const location = firstEntityValue(entities, 'location');
           var context = sessions[sessionId].context;
-          if (!intent) {
-            // use app data, or a previous context to decide how to fallback
-            console.log("No intent");
-            console.log('Failed to read text from twilio!!!');
-      			res.writeHead(200, {'Content-Type': 'text/xml'});
-      			twimlResp.message("Could not read your text.");
-      			res.end(twimlResp.toString());
-            return;
-          }
           const recipientId = sessions[sessionId].fbid;
-          if(intent.value)
-          switch (intent.value) {
-            case 'app_make':
-              console.log('🤖 > Okay, making an appointment');
+          console.log("Entities: " + JSON.stringify(entities));
+          if(item && item.confidence > 0.5){
+            items(sessionId, context, entities);
+            console.log("Great!  Please provide the property address with your zip code.");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Great!  Please provide the property address with your zip code.");
+            }
+          }else if(location){
+            verifyAddress(sessionId, context, entities);
+            console.log("Ok, what date and time would you like service.");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Ok, what date and time would you like service.");
+            }
+          }else if(dateTime){
+            checkDateTime(sessionId, context, entities);
+            console.log("Would a two hour window starting at this time work for you? (yes/no only):");
+            console.log(context.foundTime);
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"
+                                                 + context.foundTime);
+            }
+
+          }else if(polarAns && polarAns.value == "No"){
+
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Ok, what date and time would you like service.");
+            }
+          }else if(polarAns && polarAns.value == "Yes"){
+            if(sessions[sessionId].name && sessions[sessionId].name != ""){
+              junkOrder(sessionId, context, entities);
+              console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
               if(recipientId.substring(0,6) == "100011"){
-          			sessions[sessionId].message += ("\n" + '> Okay, making an appointment');
+                sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
               }
-              //res.send('🤖 > Okay, making an appointment');
-              break;
-            case 'app_show':
-              console.log('🤖 > Okay, showing appointments');
+            }else{
               if(recipientId.substring(0,6) == "100011"){
-          			sessions[sessionId].message += ("\n" + '> Okay, showing appointments');
+                sessions[sessionId].message += ("\n" + "What name should we use for this appointment?");
               }
-              break;
-            default:
-              console.log(`🤖  ${intent.value}`);
-              if(recipientId.substring(0,6) == "100011"){
-          			sessions[sessionId].message += ("\n" + `>  ${intent.value}`);
-              }
-              break;
+            }
+          }else if(contact && contact.confidence > 0.6){
+            setName(sessionId, context, entities);
+            junkOrder(sessionId, context, entities);
+            console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+            }
+          }else if((greeting || junkGreeting) && !polarAns){
+            console.log("Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
+            }
+          }else{
+            console.log("Something went wrong.")
           }
 
           console.log('Waiting for next user messages');

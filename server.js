@@ -676,11 +676,11 @@ function sendEmail(userEmail){
 
 function items(sessionId, context, entities) {
   var item = firstEntityValue(entities, 'item');
-  console.log("Entities: " + JSON.stringify(entities));
+  //console.log("Entities: " + JSON.stringify(entities));
   if(context.fail){
     delete context.fail;
   }
-  console.log("Items: " + item.value);
+  //console.log("Items: " + item.value);
   if(item.value){
     delete context.fail;
     sessions[sessionId].items = item.value; //may change this to include an array of items...
@@ -698,7 +698,7 @@ function verifyAddress(sessionId, context, entities) {
   //used only for demo to find cart that addToCart method will send it too.
   //todo: get this function to wait to complete before returning...
     var loc = firstEntityValue(entities, 'location')
-    console.log("Location understood by wit.ai: " + loc.value);
+    //console.log("Location understood by wit.ai: " + loc.value);
     if(loc){
       geocoder.geocode(loc.value)
       .then(function(res) {
@@ -755,7 +755,7 @@ function verifyAddress(sessionId, context, entities) {
     //East coast time difference
     var timezoneOff = -5;
 
-    console.log("dateTime: " + dayTime.value);
+    //console.log("dateTime: " + dayTime.value);
     if(dayTime.value){
       delete context.fail;
       //window between 8 - 18
@@ -785,8 +785,8 @@ function verifyAddress(sessionId, context, entities) {
 
       //check to see if time is within 2 hours and fail if it does
       //this is in hours
-      console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
-      console.log("This is what new Object looks like: " + date);
+      //console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
+      //console.log("This is what new Object looks like: " + date);
       if( (date-(new Date()))/(1000*60*60) < 2.0) {
         console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         delete context.foundTime;
@@ -1713,7 +1713,7 @@ app.get('/twilio', function (req, res) {
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
-app.post('/testing', function (req, res) {
+app.post('/junkTwilio', function (req, res) {
   var text = req.body.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
 	//console.log(req);
@@ -1727,7 +1727,7 @@ app.post('/testing', function (req, res) {
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
 	var sessionId = findOrCreateSession(sender);
-  console.log("0. Sessions looks like: " + JSON.stringify(sessions));
+  //console.log("0. Sessions looks like: " + JSON.stringify(sessions));
 	//check to reset context
 	//if conversationTime == null
 	if(!sessions[sessionId].conversationTime){
@@ -1821,9 +1821,14 @@ app.post('/testing', function (req, res) {
             }else{
               if(recipientId.substring(0,6) == "100011"){
                 sessions[sessionId].message += ("\n" + "What name should we use for this appointment?");
+                context.getName = true;
               }
             }
-          }else if(contact && contact.confidence > 0.6){
+          }else if(contact && contact.confidence > 0.6 || context.getName){
+            //console.log("WE IN HERE BOIIIIII");
+            if(!contact){
+              entities.contact = [{"value": text}];
+            }
             setName(sessionId, context, entities);
             junkOrder(sessionId, context, entities);
             console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
@@ -1836,7 +1841,8 @@ app.post('/testing', function (req, res) {
               sessions[sessionId].message += ("\n" + "Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
             }
           }else{
-            console.log("Something went wrong.")
+            console.log("Something went wrong.");
+            sessions[sessionId].message += ("\n" + "Something went wrong.");
           }
 
           console.log('Waiting for next user messages');
@@ -1893,6 +1899,7 @@ app.post('/testing', function (req, res) {
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
+/*
 app.get('/junkTwilio', function (req, res) {
 	var text = req.query.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
@@ -1993,7 +2000,7 @@ app.get('/junkTwilio', function (req, res) {
 			twimlResp.message("Could not read your text.");
 			res.end(twimlResp.toString());
 	}
-});
+});*/
 
 // Message handler for Facebook Messenger
 app.post('/webhook', (req, res) => {

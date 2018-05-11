@@ -1,10 +1,11 @@
 {
   "name": "NuntAgri",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Node.js of NuntAgri platform",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "mocha"
   },
   "engines": {
     "node": "6.2.2"
@@ -26,5 +27,12 @@
     "sendgrid": "^5.1.2",
     "stripe": "^4.23.1",
     "twilio": "^3.0.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "chai-http": "^4.0.0",
+    "chai-xml": "^0.3.2",
+    "mocha": "^5.1.1",
+    "xml2js": "^0.4.19"
   }
 }

@@ -46,9 +46,9 @@ var numJunkInvoices = 1;
 var NodeGeocoder = require('node-geocoder');
 var options = {
   provider: 'openstreetmap',
- 
-  // Optional depending on the providers 
-  httpAdapter: 'https', // Default 
+
+  // Optional depending on the providers
+  httpAdapter: 'https', // Default
   email: 'pranajain@gmail.com', // dunno
   formatter: null         // 'gpx', 'string', ...
 };
@@ -66,6 +66,9 @@ var geocoder = NodeGeocoder(options);
 */
 //mongodb database setup
 var mongoose = require('mongoose');
+
+// *** config file *** //
+var config = require('./_config');
 
 // *** seed the database *** //
 if (process.env.NODE_ENV === 'development') {
@@ -186,12 +189,13 @@ function sendJobToDirtyDog(order) {
 	var timeStamp = d.getTime()/1000;
 	console.log("Date Object: " + d);
 	console.log("Timestamp: " + timeStamp);
+  var abbr = abbrRegion(order.location.state, "abbr");
 	var options = { method: 'POST',
 	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
-	  headers: 
-	   { 
+	  headers:
+	   {
 		 'content-type': 'application/x-www-form-urlencoded' },
-	  form: 
+	  form:
 	   { fran_id: '2', //constant
 		 jTime: timeStamp, //date converted to unix timecode
 		 trkID: '7', //constant, may change to have for specifically text based submissions
@@ -199,28 +203,30 @@ function sendJobToDirtyDog(order) {
 		 cFirstName: fname, // collected by name
 		 cLastName: lname, // find a way to split this up
 		 cAddress: order.location.string,
-		 //cCity: 'Middletown', //you could pull this from geocoder...
-		 //cState: 'PA', //you could pull this from geocoder...
-		 //cZip: '17112', //you could pull this from geocoder...
+		 cCity: order.location.city, //you could pull this from geocoder...
+		 cState: abbr, //you could pull this from geocoder...
+		 cZip: order.location.zipcode, //you could pull this from geocoder...
 		 cHomeArea: phone.substring(0,3), // phone number broken up into parts
 		 cHomePre: phone.substring(3,6), // phone number broken up into parts
 		 cHomeSuf: phone.substring(6), // phone number broken up into parts
 		 jAddress: order.location.string, //always same as cAddress
-		 //jCity: 'Middletown', //umm... you could pull this from geocoder...
-		 //jState: 'PA', //umm... you could pull this from geocoder...
-		 //jZip: '17112', //umm... you could pull this from geocoder...
+		 jCity: order.location.city, //umm... you could pull this from geocoder...
+		 jState: abbr, //umm... you could pull this from geocoder...
+		 jZip: order.location.zipcode, //umm... you could pull this from geocoder...
 		 jJunkOther: order.items // items would go here
 		 } };
-		 
+
 		 console.log("Options: " + JSON.stringify(options));
 
 	request(options, function (error, response, body) {
-	  if (error) throw new Error(error);
+	  if (error){
+      console.log("error: " + error);
+    }
 
-	  console.log(body);
+	  console.log("Response: " + JSON.stringify(response));
 	  //look only for a 200 response code...
 	});
-	
+
 }
 
 
@@ -251,84 +257,84 @@ const findOrCreateSession = (fbid) => {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString(); //123456789
     sessions[sessionId] = {
-				fbid: fbid, // phone number for sms users
-				conversationTime: null,
-				context: {
+      fbid: fbid, // phone number for sms users
+      conversationTime: null,
+      context: {
 
-				},
-				name: null,
-				seller: null, //  {list: [{name: product, amount: load}]}
-				buyer: null, // {orders:...
-				deliverer: null, //
-				items: null, //will be an array for junk hauling
-				location: null,
-				time: null,
-				message: "",
-				text: ""
-	};
-    User.findOne({ phoneID: fbid}, function(err, user){
-    	console.log("Made it into here. Found user: " + user);
-    	if (err) {
-                console.log(err);
-            }
-        if (!user) {
-            //create new model
-            console.log("Found no user");
-			var newUser = new User({
-				phoneID: fbid
-			});
-			newUser.save(function(err, user){
-				if(err){
-					console.log(err);
-				}else{
-					console.log(user);
-				}
-			});
-			sessions[sessionId] = {
-				fbid: fbid, // phone number for sms users
-				conversationTime: null,
-				context: {
-
-				},
-				name: null,
-				seller: null, //  {list: [{name: product, amount: load}]}
-				buyer: null, // {orders:...
-				deliverer: null, //
-				items: null, //will be an array for junk hauling
-				location: null,
-				time: null,
-				message: "",
-				text: ""
-			};
-        }else{
-        	//load old model from mongodb
-        	console.log("Found user");
-        	const type = user.userType;
-        	sessions[sessionId] = {
-				fbid: fbid, // phone number for sms users
-				conversationTime: null,
-				context: {
-
-				},
-				name: user.name,
-				seller: null, //  {list: [{name: product, amount: load}]}
-				buyer: null, // {orders:...
-				deliverer: null, //
-				items: null, //will be an array for junk hauling
-				location: null,
-				time: null,
-				message: "",
-				text: ""
-			};
-			sessions[sessionId][type] = user.typeData;
-			//DONT FORGET THIS
-			user.markModified('typeData');
+      },
+      name: null,
+      seller: null, //  {list: [{name: product, amount: load}]}
+      buyer: null, // {orders:...
+        deliverer: null, //
+        items: null, //will be an array for junk hauling
+        location: null,
+        time: null,
+        message: "",
+        text: ""
+      };
+      User.findOne({ phoneID: fbid}, function(err, user){
+        //console.log("Made it into here. Found user: " + user);
+        if (err) {
+          console.log(err);
         }
-    });
-  }
-  console.log(JSON.stringify(sessions));
-  return sessionId;
-};
+        if (!user) {
+          //create new model
+          console.log("Found no user");
+          var newUser = new User({
+            phoneID: fbid
+          });
+          newUser.save(function(err, user){
+            if(err){
+              console.log(err);
+            }else{
+              console.log(user);
+            }
+          });
+          sessions[sessionId] = {
+            fbid: fbid, // phone number for sms users
+            conversationTime: null,
+            context: {
+
+            },
+            name: null,
+            seller: null, //  {list: [{name: product, amount: load}]}
+            buyer: null, // {orders:...
+              deliverer: null, //
+              items: null, //will be an array for junk hauling
+              location: null,
+              time: null,
+              message: "",
+              text: ""
+            };
+          }else{
+            //load old model from mongodb
+            console.log("Found user");
+            const type = user.userType;
+            sessions[sessionId] = {
+              fbid: fbid, // phone number for sms users
+              conversationTime: null,
+              context: {
+
+              },
+              name: user.name,
+              seller: null, //  {list: [{name: product, amount: load}]}
+              buyer: null, // {orders:...
+                deliverer: null, //
+                items: null, //will be an array for junk hauling
+                location: null,
+                time: null,
+                message: "",
+                text: ""
+              };
+              sessions[sessionId][type] = user.typeData;
+              //DONT FORGET THIS
+              user.markModified('typeData');
+            }
+          });
+        }
+        //console.log(JSON.stringify(sessions));
+        return sessionId;
+      };
 
 
 // Method to read entities and get values if exists
@@ -336,12 +342,13 @@ const firstEntityValue = (entities, entity) => {
   const val = entities && entities[entity] &&
     Array.isArray(entities[entity]) &&
     entities[entity].length > 0 &&
-    entities[entity][0].value
-  ;
+    entities[entity][0];
   if (!val) {
     return null;
   }
-  return typeof val === 'object' ? val.value : val;
+  console.log("firstEntity: " + val);
+  //return typeof val === 'object' ? val.value : val;
+  return val;
 };
 
 
@@ -392,13 +399,13 @@ const selectDeliverers = (order, sessionId) => {
 				bestK = k;
 			}
 	}
-	
+
 	});
 	console.log("BestDeliverer: " + bestdeliverer)
 	if(bestdeliverer){
 		console.log("Best driver is: " + sessions[bestK])
 		var isEmpty = bestdeliverer.queue < 1;
-	
+
 		//if it is empty start queue movement after pushing order in.
 		bestdeliverer.queue.push(order);
 		sessions[bestK].context.deliverer = true;
@@ -409,10 +416,10 @@ const selectDeliverers = (order, sessionId) => {
 				//sms twilio
 				var phone = "+" + (sessions[bestK].fbid).substring(6);
 				var message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
-														"\nItems: " + bestdeliverer.queue[0].items + 
+														"\nItems: " + bestdeliverer.queue[0].items +
 														"\nAddress: " + bestdeliverer.queue[0].location.string +
-														"\nPhone Number: " + bestdeliverer.queue[0].phone + 
-														"\nTime: " + bestdeliverer.queue[0].time + 
+														"\nPhone Number: " + bestdeliverer.queue[0].phone +
+														"\nTime: " + bestdeliverer.queue[0].time +
 														"\nText \"done\" or \"complete\" when job has been finished";
 				//will have to change this so can work from different phone numbers depending on who's using this
 				console.log("Sending Message to deliverer");
@@ -426,16 +433,134 @@ const selectDeliverers = (order, sessionId) => {
 			}else{
 				//facebook
 				var sender = sessions[bestK].fbid;
-				var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name + 
+				var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name +
 														"\nAddress: " + bestdeliverer.queue[0].start +
 														"\nContact at: " + sessions[sessionId].fbid;
 				fbMessage(sender, message);
 			}
-		
+
 		}
 	}
 
 };
+
+//-----------------------------------------------------------------
+// DateTime Helper functions
+// Check if timezone is in Daylight savings time
+
+Date.prototype.stdTimezoneOffset = function () {
+    var jan = new Date(this.getFullYear(), 0, 1);
+    var jul = new Date(this.getFullYear(), 6, 1);
+    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+}
+
+Date.prototype.isDstObserved = function () {
+    return this.getTimezoneOffset() < this.stdTimezoneOffset();
+}
+
+//-----------------------------------------------------------------
+// State Abbreviation conversion
+// Convert full state name to the abbr version
+function abbrRegion(input, to) {
+    var states = [
+        ['Alabama', 'AL'],
+        ['Alaska', 'AK'],
+        ['American Samoa', 'AS'],
+        ['Arizona', 'AZ'],
+        ['Arkansas', 'AR'],
+        ['Armed Forces Americas', 'AA'],
+        ['Armed Forces Europe', 'AE'],
+        ['Armed Forces Pacific', 'AP'],
+        ['California', 'CA'],
+        ['Colorado', 'CO'],
+        ['Connecticut', 'CT'],
+        ['Delaware', 'DE'],
+        ['District Of Columbia', 'DC'],
+        ['Florida', 'FL'],
+        ['Georgia', 'GA'],
+        ['Guam', 'GU'],
+        ['Hawaii', 'HI'],
+        ['Idaho', 'ID'],
+        ['Illinois', 'IL'],
+        ['Indiana', 'IN'],
+        ['Iowa', 'IA'],
+        ['Kansas', 'KS'],
+        ['Kentucky', 'KY'],
+        ['Louisiana', 'LA'],
+        ['Maine', 'ME'],
+        ['Marshall Islands', 'MH'],
+        ['Maryland', 'MD'],
+        ['Massachusetts', 'MA'],
+        ['Michigan', 'MI'],
+        ['Minnesota', 'MN'],
+        ['Mississippi', 'MS'],
+        ['Missouri', 'MO'],
+        ['Montana', 'MT'],
+        ['Nebraska', 'NE'],
+        ['Nevada', 'NV'],
+        ['New Hampshire', 'NH'],
+        ['New Jersey', 'NJ'],
+        ['New Mexico', 'NM'],
+        ['New York', 'NY'],
+        ['North Carolina', 'NC'],
+        ['North Dakota', 'ND'],
+        ['Northern Mariana Islands', 'NP'],
+        ['Ohio', 'OH'],
+        ['Oklahoma', 'OK'],
+        ['Oregon', 'OR'],
+        ['Pennsylvania', 'PA'],
+        ['Puerto Rico', 'PR'],
+        ['Rhode Island', 'RI'],
+        ['South Carolina', 'SC'],
+        ['South Dakota', 'SD'],
+        ['Tennessee', 'TN'],
+        ['Texas', 'TX'],
+        ['US Virgin Islands', 'VI'],
+        ['Utah', 'UT'],
+        ['Vermont', 'VT'],
+        ['Virginia', 'VA'],
+        ['Washington', 'WA'],
+        ['West Virginia', 'WV'],
+        ['Wisconsin', 'WI'],
+        ['Wyoming', 'WY'],
+    ];
+
+    // So happy that Canada and the US have distinct abbreviations
+    var provinces = [
+        ['Alberta', 'AB'],
+        ['British Columbia', 'BC'],
+        ['Manitoba', 'MB'],
+        ['New Brunswick', 'NB'],
+        ['Newfoundland', 'NF'],
+        ['Northwest Territory', 'NT'],
+        ['Nova Scotia', 'NS'],
+        ['Nunavut', 'NU'],
+        ['Ontario', 'ON'],
+        ['Prince Edward Island', 'PE'],
+        ['Quebec', 'QC'],
+        ['Saskatchewan', 'SK'],
+        ['Yukon', 'YT'],
+    ];
+
+    var regions = states.concat(provinces);
+
+    var i; // Reusable loop variable
+    if (to == 'abbr') {
+        input = input.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+        for (i = 0; i < regions.length; i++) {
+            if (regions[i][0] == input) {
+                return (regions[i][1]);
+            }
+        }
+    } else if (to == 'name') {
+        input = input.toUpperCase();
+        for (i = 0; i < regions.length; i++) {
+            if (regions[i][1] == input) {
+                return (regions[i][0]);
+            }
+        }
+    }
+}
 
 //-----------------------------------------------------------------
 // Invoice Generation and Sending
@@ -498,7 +623,7 @@ function generateInvoice(invoice, filename, success, error) {
 };
 
 generateInvoice(invoice, 'invoice.pdf', function() {
-	
+
 	console.log("Saved invoice to invoice.pdf");
 	sendEmail("pranajain@gmail.com");
 }, function(error) {
@@ -508,17 +633,17 @@ function sendEmail(userEmail){
 	var mail = new helper.Mail();
 	var email = new helper.Email('invoice@nuntagri.com', 'NuntAgri Billing');
 	mail.setFrom(email);
-	
+
 	mail.setSubject('Invoice from NuntAgri');
-	
+
 	var personalization = new helper.Personalization();
 	email = new helper.Email(userEmail);
 	personalization.addTo(email);
 	mail.addPersonalization(personalization);
-	
+
 	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body>Invoice: <iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
 	mail.addContent(content);
-	
+
 	var attachment = new helper.Attachment();
 	var file = fs.readFileSync('invoice.pdf');
 	var base64File = new Buffer(file).toString('base64');
@@ -528,7 +653,7 @@ function sendEmail(userEmail){
 	attachment.setDisposition('inline');//inline
 	attachment.setContentId("139db99fdb5c3704");
 	mail.addAttachment(attachment);
-	
+
 	var sgRequest = sg.emptyRequest({
 	  	method: 'POST',
 	  	path: '/v3/mail/send',
@@ -547,6 +672,286 @@ function sendEmail(userEmail){
 // Our bot actions
 // Write new actions over here that will be called by Wit.ai stories
 //todo: delete success and fail context markers in beginning of each attempt
+
+
+function items(sessionId, context, entities) {
+  var item = firstEntityValue(entities, 'item');
+  //console.log("Entities: " + JSON.stringify(entities));
+  if(context.fail){
+    delete context.fail;
+  }
+  //console.log("Items: " + item.value);
+  if(item.value){
+    delete context.fail;
+    sessions[sessionId].items = item.value; //may change this to include an array of items...
+
+    context.missingAddress = true;
+
+  }else{
+    delete context.missingAddress;
+    context.fail = true;
+  }
+  //return the resolution of the context...
+}
+
+function verifyAddress(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+  //todo: get this function to wait to complete before returning...
+    var loc = firstEntityValue(entities, 'location')
+    //console.log("Location understood by wit.ai: " + loc.value);
+    if(loc){
+      geocoder.geocode(loc.value)
+      .then(function(res) {
+        //console.log(res);
+        if(res.length != 0){
+          console.log("We found the geolocation.");
+          var location = {
+            string: loc.value,
+            latitude: res[0].latitude,
+            longitude: res[0].longitude,
+            city: res[0].city,
+            state: res[0].state,
+            zipcode: res[0].zipcode
+          }
+
+          sessions[sessionId].location = location;
+
+          delete context.fail;
+          context.success = true;
+
+        }else{
+          //should do this but will accept for now
+          //delete context.success;
+          //context.fail = true;
+          console.log("We failed to find location.");
+          var location = {
+            string: loc.value,
+            latitude: 0.0,
+            longitude: 0.0
+          }
+          sessions[sessionId].location = location;
+          delete context.fail;
+          context.success = true;
+        }
+        //sessions[sessionId].location = loc;
+      }).catch(function(err) {
+        console.log(err);
+        delete context.success;
+        context.fail = true;
+      });
+    }else{
+      console.log("Could not identify location from wit.ai");
+      delete context.success;
+      context.fail = true;
+    }
+  }
+  function checkDateTime(sessionId, context, entities) {
+    //used only for demo to find cart that addToCart method will send it too.
+    var dayTime = firstEntityValue(entities, 'datetime');
+    if(context.fail){
+      delete context.fail;
+    }
+
+    //East coast time difference
+    var timezoneOff = -5;
+
+    //console.log("dateTime: " + dayTime.value);
+    if(dayTime.value){
+      delete context.fail;
+      //window between 8 - 18
+      var date = new Date(dayTime.value);
+      date.setMinutes(0);
+      date.setSeconds(0);
+
+      //check to see if we're in Daylight savings time (DST)
+      if (date.isDstObserved()) {
+          console.log ("Daylight saving time!");
+          timezoneOff++;
+      }
+
+      //to fit time windows that we have set up (2 hours each) from 8 am to 6pm
+      //include timezone offset to see everything in east coast time
+      if((date.getUTCHours() + timezoneOff) % 2 != 0){
+        date.setUTCHours(date.getUTCHours() - 1);
+      }
+      //date is coming in wrong because of system time zone
+      var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
+
+      //testing by putting date object in here so we can do other things too.
+      //sessions[sessionId].time = dayTime.value;
+      sessions[sessionId].time = date.toString();
+      //what to display to user
+      context.foundTime = orderTime;
+
+      //check to see if time is within 2 hours and fail if it does
+      //this is in hours
+      //console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
+      //console.log("This is what new Object looks like: " + date);
+      if( (date-(new Date()))/(1000*60*60) < 2.0) {
+        console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        delete context.foundTime;
+        context.fail = true;
+      }else if((date.getUTCHours() + timezoneOff) < 8 || (date.getUTCHours() + timezoneOff) >= 18){
+        console.log("Out of scope with windows!!!!!!");
+        delete context.foundTime;
+        context.fail = true;
+      }
+    }else{
+      delete context.complete;
+      context.fail = true;
+    }
+}
+function setName(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+    var name = firstEntityValue(entities, 'contact');
+    name = sessions[sessionId].text;
+    if(context.fail){
+      delete context.fail;
+    }
+    if(name){
+      var User = require('./models/user');
+      User.findOne({ name: name }, function (err, user) {
+        if (err){
+          console.log(err);
+        }else{
+          if(user){
+            console.log("USER FOUND!!!");
+          }else{
+            console.log("User not found");
+          }
+        }
+      });
+      sessions[sessionId].name = name;
+      context.gotName = true;
+    }else{
+      context.fail = true;
+    }
+    console.log("name: " + name);
+}
+function junkOrder(sessionId, context, entities) {
+  //used only for demo to find cart that addToCart method will send it too.
+    var dayTime = sessions[sessionId].time;
+    var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+    if(context.fail){
+      delete context.fail;
+    }
+    console.log("dayTime: " + dayTime);
+    console.log("orderTime: " + orderTime);
+    if(dayTime && orderTime){
+      delete context.fail;
+
+      //finish order here...
+      var phone = "+" + (sessions[sessionId].fbid).substring(6);
+      var order = {
+        name: sessions[sessionId].name,
+        items: sessions[sessionId].items,
+        location: sessions[sessionId].location,
+        phone: phone,
+        time: sessions[sessionId].time
+      };
+      console.log("Order: " + JSON.stringify(order));
+
+      //add to dirty dog hauling
+      sendJobToDirtyDog(order);
+
+      //select deliverer to send it to
+      selectDeliverers(order, sessionId);
+
+
+      var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
+                        "\nItems: " + sessions[sessionId].items +
+                        "\nAddress: " + sessions[sessionId].location.string +
+                        "\nPhone Number: " + phone + "\nTime: " + orderTime;
+
+      console.log(message);
+
+      //this is the number you are eventually sending it to: +17173154479
+      //twilio numbers: +17173882677 , +16506811972
+      //Brandon: +17173297650
+      const rate = 5.0; //$5 per lead sent
+      client.messages
+        .create({
+          to: '+17173154479',
+          from: '+17173882677 ',
+          body: message
+        }).then(function(message) {
+            console.log(message.sid);
+            //update quote
+            numJunkLeadsSent++;
+            if(numJunkLeadsSent >= 20){
+              const leadsCharged = numJunkLeadsSent;
+              const invoiceNum = "INV-"+ numJunkInvoices++;
+              //generate an Invoice
+              var invoice = {
+            logo: "http://nuntagri.com/images/NuntagriFinal.png",
+            from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
+            to: "Dirty Dog Hauling",
+            currency: "usd",
+            number: invoiceNum,
+            payment_terms: "Auto-Billed - Do Not Pay",
+            items: [
+              {
+                name: "Leads from NuntAgri ",
+                quantity: leadsCharged,
+                unit_cost: rate
+              }
+            ],
+            notes: "You should be emailed a receipt for this shortly.",
+            terms: "No need to submit payment. You will be auto-billed for this invoice."
+          };
+              console.log("------------------Charging Dirty Dog------------------");
+              console.log("Leads: " + numJunkLeadsSent);
+
+              //get customer and charge him
+              stripe.customers.list({
+                  limit: 3,
+                  created: {
+                    lt: "1499552052"
+                  }
+
+               },
+            function(err, customers) {
+              // asynchronously called
+              if(err){
+                console.log(err);
+              }else{
+                const customer = customers.data[0];
+                generateInvoice(invoice, 'invoice.pdf', function() {
+                console.log("Saved invoice to invoice.pdf");
+                sendEmail(customer.email);
+              }, function(error) {
+                console.error(error);
+              });
+                stripe.charges.create({
+                  amount: leadsCharged*rate*100,
+                  currency: "usd",
+                  customer: customer.id // Previously stored, then retrieved
+              }, function(err, charge) {
+                  // asynchronously called
+                  if(err){
+                    console.log(err);
+                  }else{
+                    numJunkLeadsSent -= leadsCharged;
+                    console.log("Leads (should be 0): " + numJunkLeadsSent);
+                  }
+              });
+            }
+            });
+
+            }
+
+        }).catch(function(err) {
+            console.error('Could not send message');
+            console.error(err);
+        });
+      delete context.fail;
+      context.complete = phone;
+    }else{
+      delete context.complete;
+      context.fail = true;
+    }
+}
+
 const actions = {
   send({sessionId}, {text}) {
     // Our bot has something to say!
@@ -761,12 +1166,12 @@ const actions = {
         				latitude: res[0].latitude,
         				longitude: res[0].longitude
         			}
-        			
+
         			sessions[sessionId].location = location;
-        			
+
 					delete context.fail;
 					context.success = true;
-					
+
     			}else{
     				//should do this but will accept for now
     				//delete context.success;
@@ -804,7 +1209,7 @@ const actions = {
 			//for incomplete, not done, etc...
 			if(statement){
 				if(statement.includes("in") || statement.includes("not")){
-				
+
 							/*
 								//dirty dog
 								queue: [
@@ -827,7 +1232,7 @@ const actions = {
 												phone: phone,
 												time: dayTime
 											}
-											
+
 					*/
 					//same as below but with statement sent to leland saying order cancelled
 				}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
@@ -837,18 +1242,18 @@ const actions = {
 					if( deliverer.queue[0]){
 						var order = deliverer.queue[0];
 						message = "Next order by user: \n" + "Name: " + order.name +
-														"\nItems: " + order.items + 
+														"\nItems: " + order.items +
 														"\nAddress: " + order.location.string +
-														"\nPhone Number: " + order.phone + 
-														"\nTime: " + order.time + 
+														"\nPhone Number: " + order.phone +
+														"\nTime: " + order.time +
 														"\nText \"done\" or \"complete\" when job has been finished";
 					}else{
 						message = "Your job queue is currently empty. You can either wait for another job or call it a day! ";
 					}
-												
+
 					//driver's phone
 					var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				
+
 					//send message to driver with order or "empty job queue" message.
 					client.messages
 					.create({
@@ -863,7 +1268,7 @@ const actions = {
 					});
 				}
 			}
-			
+
 			context.complete = true;
 			return resolve(context);
 		});
@@ -880,9 +1285,9 @@ const actions = {
 			if(items){
 				delete context.fail;
 				sessions[sessionId].items = items;
-				
-				context.missingAddress = true; 
-				
+
+				context.missingAddress = true;
+
 			}else{
 				delete context.missingAddress;
 				context.fail = true;
@@ -902,7 +1307,7 @@ const actions = {
 			console.log("orderTime: " + orderTime);
 			if(dayTime && orderTime){
 				delete context.fail;
-				
+
 				//finish order here...
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
 				var order = {
@@ -913,23 +1318,23 @@ const actions = {
 					time: sessions[sessionId].time
 				};
 				console.log("Order: " + JSON.stringify(order));
-				
+
 				//add to dirty dog hauling
 				sendJobToDirtyDog(order);
-				
+
 				//select deliverer to send it to
-				selectDeliverers(order, sessionId);	
-				
-						
+				selectDeliverers(order, sessionId);
+
+
 				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
-													"\nItems: " + sessions[sessionId].items + 
+													"\nItems: " + sessions[sessionId].items +
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + orderTime;
-				
+
 				console.log(message);
-				
+
 				//this is the number you are eventually sending it to: +17173154479
-				//twilio numbers: +17173882677 , +16506811972 
+				//twilio numbers: +17173882677 , +16506811972
 				//Brandon: +17173297650
 				const rate = 5.0; //$5 per lead sent
 				client.messages
@@ -964,14 +1369,14 @@ const actions = {
 						};
       					console.log("------------------Charging Dirty Dog------------------");
       					console.log("Leads: " + numJunkLeadsSent);
-      					
+
       					//get customer and charge him
-      					stripe.customers.list({ 
+      					stripe.customers.list({
       							limit: 3,
       							created: {
       								lt: "1499552052"
       							}
-      					
+
   							 },
   						function(err, customers) {
     						// asynchronously called
@@ -1000,9 +1405,9 @@ const actions = {
 								});
 							}
   						});
-      					
+
       				}
-      				
+
     			}).catch(function(err) {
       				console.error('Could not send message');
       				console.error(err);
@@ -1036,12 +1441,12 @@ const actions = {
 				}
 				//date is coming in wrong because of system time zone
 				var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
-				
+
 				//testing by putting date object in here so we can do other things too.
 				sessions[sessionId].time = dayTime;
 				//what to display to user
 				context.foundTime = orderTime;
-				
+
 				//check to see if time is within 2 hours and fail if it does
 				//this is in hours
 				console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
@@ -1122,10 +1527,10 @@ const actions = {
 				//finish order here... do fbmessage or sms depending on their fbid "100011"
 				//fbMessage(sender, 'Added item to cart #' + CART);
 				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items + 
+				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items +
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
-													
+
 				console.log(message);
 				//this is the number you are eventually sending it to: +17176483389
 				client.messages
@@ -1205,11 +1610,13 @@ const witJunk = new Wit({
   logger: new log.Logger(log.INFO)
 });
 
+
+
 // Starting our webserver and putting it all together
 const app = express();
 
 // *** mongo *** //
-app.set('dbUrl', "mongodb://mongo:27017");
+app.set('dbUrl', config.mongoURI[process.env.NODE_ENV]);
 mongoose.connect(app.get('dbUrl'));
 
 
@@ -1220,6 +1627,7 @@ app.use(({method, url}, rsp, next) => {
   next();
 });
 app.use(bodyParser.json({ verify: verifyRequestSignature }));
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // Webhook setup
 app.get('/webhook', (req, res) => {
@@ -1233,12 +1641,13 @@ app.get('/webhook', (req, res) => {
 //to test if it works...
 
 app.get('/', function (req, res) {
-  res.send('Hello Pranav... What are you doing here?\n');
-  //maybe get this to work with website
+	//redirect to website test
+  res.redirect('http://nuntagri.com');
+  //res.send("Hi PJ");
 });
 
 //message handler for twilio
-// post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
 app.get('/twilio', function (req, res) {
 	var text = req.query.Body; //message from twilio to send to Wit.
@@ -1259,7 +1668,7 @@ app.get('/twilio', function (req, res) {
 	const sessionId = findOrCreateSession(sender);
 	if(text){
 		// We received a text message
-			
+
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
         wit.runActions(
@@ -1280,7 +1689,7 @@ app.get('/twilio', function (req, res) {
 			// if (context['done']) {
 			//   delete sessions[sessionId];
 			// }
-			
+
 			//Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
 			console.log("Context: " + JSON.stringify(context));
@@ -1302,8 +1711,195 @@ app.get('/twilio', function (req, res) {
 });
 
 //message handler for twilio
-// post isn't working because of bodyParser is going to verify with below function & gets rid of body...  
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
+app.post('/junkTwilio', function (req, res) {
+  var text = req.body.Body; //message from twilio to send to Wit.
+	const twimlResp = new MessagingResponse();
+	//console.log(req);
+	console.log("\n\n Test: " + text);
+	//console.log("\n Query:" + JSON.stringify(req.query));
+	// We retrieve the user's current session, or create one if it doesn't exist
+	// This is needed for our bot to figure out the conversation history
+	//figure out how to fix sender to be twilio only
+	var sender = req.body.From;
+			// binary for #
+	sender = "100011" + sender.substring(1);
+	console.log("Sender: " + sender);
+	var sessionId = findOrCreateSession(sender);
+  //console.log("0. Sessions looks like: " + JSON.stringify(sessions));
+	//check to reset context
+	//if conversationTime == null
+	if(!sessions[sessionId].conversationTime){
+		console.log("Found no time");
+		//new conversation
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}else if( ((new Date()) - sessions[sessionId].conversationTime)/60000 > 10.0){
+		//new conversation if 10 minutes has elapsed
+		console.log("Found that 10 minutes elapsed");
+		//testing deleting the entire session...
+		var temp = sessions[sessionId];
+		delete sessions[sessionId];
+		sessionId = findOrCreateSession(sender);
+		sessions[sessionId] = temp;
+		sessions[sessionId].context = {};
+		//set time
+		sessions[sessionId].conversationTime = new Date();
+	}
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000
+	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
+	sessions[sessionId].text = text;
+
+
+
+	if(text){
+		// We received a text message
+        //todo: setup promises so that everything is synchronous
+        // Let's forward the message to the Wit.ai Bot Engine
+        // This will run all actions until our bot has nothing left to do
+        return witJunk.message(text).then(({entities}) => {
+          const intent = firstEntityValue(entities, 'intent');
+          const greeting = firstEntityValue(entities, 'greetings');
+          const junkGreeting = firstEntityValue(entities, 'junkGreeting');
+          const quote = firstEntityValue(entities, 'quote');
+          const item = firstEntityValue(entities, 'item');
+          const polarAns = firstEntityValue(entities, 'polarAns');
+          const dateTime = firstEntityValue(entities, 'datetime');
+          const contact = firstEntityValue(entities, 'contact');
+          const location = firstEntityValue(entities, 'location');
+          var context = sessions[sessionId].context;
+          const recipientId = sessions[sessionId].fbid;
+          console.log("Entities: " + JSON.stringify(entities));
+          if(item && item.confidence > 0.5){
+            items(sessionId, context, entities);
+            console.log("Great!  Please provide the property address with your zip code.");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Great!  Please provide the property address with your zip code.");
+            }
+          }else if(location){
+            //todo: setup so that could pull location data from database and offer that instead
+            //if location was found, make sure that location entity contains the house numbers
+            var index = text.indexOf(location.value);
+            var n = text.lastIndexOf(" ", index-2);
+            //if -1 then put 0 to start at beginning anyways
+            n = n<0 ? 0 : n;
+            var str = text.substring(n, index + location.value.length);
+            //make sure to tighten scope so only takes numbers right before... not "I live at ..."
+            entities.location[0].value = str;
+            verifyAddress(sessionId, context, entities);
+            console.log("Ok, what date and time would you like service.");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Ok, what date and time would you like service.");
+            }
+          }else if(dateTime){
+            checkDateTime(sessionId, context, entities);
+            console.log("Would a two hour window starting at this time work for you? (yes/no only):");
+            console.log(context.foundTime);
+            if(recipientId.substring(0,6) == "100011"){
+              if(context.fail == true){
+                sessions[sessionId].message += ("\n" + "We cannot accomodate that time. What other day & time would work?");
+              }else{
+                sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"
+                                                   + context.foundTime);
+              }
+            }
+
+          }else if(polarAns && polarAns.value == "No"){
+
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Ok, what date and time would you like service.");
+            }
+          }else if(polarAns && polarAns.value == "Yes"){
+            if(sessions[sessionId].name && sessions[sessionId].name != ""){
+              junkOrder(sessionId, context, entities);
+              console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+              if(recipientId.substring(0,6) == "100011"){
+                sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+              }
+            }else{
+              if(recipientId.substring(0,6) == "100011"){
+                sessions[sessionId].message += ("\n" + "What name should we use for this appointment?");
+                context.getName = true;
+              }
+            }
+          }else if(contact && contact.confidence > 0.6 || context.getName){
+            //console.log("WE IN HERE BOIIIIII");
+            if(!contact){
+              entities.contact = [{"value": text}];
+            }
+            setName(sessionId, context, entities);
+            junkOrder(sessionId, context, entities);
+            console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+            }
+          }else if((greeting || junkGreeting) && !polarAns){
+            console.log("Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
+            if(recipientId.substring(0,6) == "100011"){
+              sessions[sessionId].message += ("\n" + "Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
+            }
+          }else{
+            console.log("Something went wrong.");
+            sessions[sessionId].message += ("\n" + "Something went wrong.");
+          }
+
+          console.log('Waiting for next user messages');
+    			res.writeHead(200, {'Content-Type': 'text/xml'});
+    			twimlResp.message(sessions[sessionId].message);
+    			res.end(twimlResp.toString());
+    			sessions[sessionId].message = "";
+
+
+
+          // Based on the session state, you might want to reset the session.
+    			// This depends heavily on the business logic of your bot.
+    			// Example:
+    			// if (context['done']) {
+    			//   delete sessions[sessionId];
+    			// }
+
+    			//Our logic is: if we have had success, failure, a final item, or we updated cart...
+    			//reset the context
+          console.log("Context: " + JSON.stringify(context));
+    			if(context.complete){
+    				context = {};
+    				//remove time
+    				sessions[sessionId].conversationTime = null;
+    				//deleting the entire session...
+    				var temp = sessions[sessionId];
+    				User.update( {phoneID: sessions[sessionId].fbid}, {
+    					name: sessions[sessionId].name, address: sessions[sessionId].location.string
+    				}, function(err, numberAffected, rawResponse) {
+       					//handle it
+       					if(err){
+       						console.log("err: " + err);
+       					}else{
+       						console.log("Response to updating user: " + rawResponse);
+       					}
+    				});
+
+    				delete sessions[sessionId];
+    			}else{
+    				// Updating the user's current session state
+    				sessions[sessionId].context = context;
+    				sessions[sessionId].text = "";
+    			}
+        });
+  }else{
+			console.log('Failed to read text from twilio!!!');
+			res.writeHead(200, {'Content-Type': 'text/xml'});
+			twimlResp.message("Could not read your text.");
+			res.end(twimlResp.toString());
+	}
+
+});
+
+//message handler for twilio
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
+//find a way to fix that so we dont have this issue.
+/*
 app.get('/junkTwilio', function (req, res) {
 	var text = req.query.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
@@ -1341,12 +1937,12 @@ app.get('/junkTwilio', function (req, res) {
 		//set time
 		sessions[sessionId].conversationTime = new Date();
 	}
-	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000 
+	console.log("The time displacement is: " + ((new Date()) - sessions[sessionId].conversationTime)/60000
 	 			+ "\nContext: " + JSON.stringify(sessions[sessionId].context));
 	sessions[sessionId].text = text;
 	if(text){
 		// We received a text message
-			
+
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
         witJunk.runActions(
@@ -1367,7 +1963,7 @@ app.get('/junkTwilio', function (req, res) {
 			// if (context['done']) {
 			//   delete sessions[sessionId];
 			// }
-			
+
 			//Our logic is: if we have had success, failure, a final item, or we updated cart...
 			//reset the context
 			console.log("Context: " + JSON.stringify(context));
@@ -1387,7 +1983,7 @@ app.get('/junkTwilio', function (req, res) {
    						console.log("Response to updating user: " + rawResponse);
    					}
 				});
-				
+
 				delete sessions[sessionId];
 			}else{
 				// Updating the user's current session state
@@ -1404,7 +2000,7 @@ app.get('/junkTwilio', function (req, res) {
 			twimlResp.message("Could not read your text.");
 			res.end(twimlResp.toString());
 	}
-});
+});*/
 
 // Message handler for Facebook Messenger
 app.post('/webhook', (req, res) => {
@@ -1541,3 +2137,4 @@ if(PORT == 443){
 	http.createServer(app).listen(PORT);
 }
 console.log('Listening on port: ' + PORT + '...');
+module.exports = app;

@@ -1,0 +1,7 @@
+language: node_js
+node_js:
+  - "node"
+before_script:
+  - echo 'America/New_York' | sudo tee /etc/timezone
+  - sudo dpkg-reconfigure --frontend noninteractive tzdata
+services: mongodb

@@ -880,10 +880,10 @@ function junkOrder(sessionId, context, entities) {
             numJunkLeadsSent++;
             if(numJunkLeadsSent >= 20){
               const leadsCharged = numJunkLeadsSent;
-              const invoiceNum = "INV-"+ numJunkInvoices;
+              const invoiceNum = "INV-"+ numJunkInvoices++;
               //generate an Invoice
               var invoice = {
-            logo: "https://scontent.fsnc1-1.fna.fbcdn.net/v/t1.0-9/19875336_1034769596658333_6527658905718200604_n.png?oh=f382576eb216f096a0760676ebecb0fd&oe=59C3A944",
+            logo: "http://nuntagri.com/images/NuntagriFinal.png",
             from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
             to: "Dirty Dog Hauling",
             currency: "usd",
@@ -1642,8 +1642,8 @@ app.get('/webhook', (req, res) => {
 
 app.get('/', function (req, res) {
 	//redirect to website test
-  //res.redirect('http://nuntagri.com');
-  res.send("Hi PJ");
+  res.redirect('http://nuntagri.com');
+  //res.send("Hi PJ");
 });
 
 //message handler for twilio

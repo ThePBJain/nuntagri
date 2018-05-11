@@ -223,7 +223,7 @@ function sendJobToDirtyDog(order) {
       console.log("error: " + error);
     }
 
-	  console.log("Response: " + response);
+	  console.log("Response: " + JSON.stringify(response));
 	  //look only for a 200 response code...
 	});
 
@@ -778,7 +778,8 @@ function verifyAddress(sessionId, context, entities) {
       var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
 
       //testing by putting date object in here so we can do other things too.
-      sessions[sessionId].time = dayTime.value;
+      //sessions[sessionId].time = dayTime.value;
+      sessions[sessionId].time = date.toString();
       //what to display to user
       context.foundTime = orderTime;
 

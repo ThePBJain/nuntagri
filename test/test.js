@@ -21,7 +21,6 @@ describe('Testing Normal 1', function() {
     .get('/')
     .end(function(err, res){
       expect(res).to.have.status(200);
-      expect(res.text).to.equal("Hi PJ");
       done();
     });
   });
@@ -316,7 +315,6 @@ describe('Testing with weird name 4', function() {
     .get('/')
     .end(function(err, res){
       expect(res).to.have.status(200);
-      expect(res.text).to.equal("Hi PJ");
       done();
     });
   });

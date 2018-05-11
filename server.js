@@ -97,7 +97,6 @@ const PORT = process.env.PORT || 443; //443
 // Wit.ai parameters
 const WIT_TOKEN = process.env.WIT_TOKEN;
 const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
-const WIT_TEST_TOKEN = process.env.WIT_TEST_TOKEN;
 // Messenger API parameters
 const FB_PAGE_ID = process.env.FB_PAGE_ID;
 if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
@@ -1610,12 +1609,7 @@ const witJunk = new Wit({
   logger: new log.Logger(log.INFO)
 });
 
-//setting up Test bot
-const witTest = new Wit({
-  accessToken: WIT_TEST_TOKEN,
-  actions,
-  logger: new log.Logger(log.INFO)
-});
+
 
 // Starting our webserver and putting it all together
 const app = express();

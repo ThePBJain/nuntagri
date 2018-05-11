@@ -25,9 +25,9 @@ describe('Testing Normal 1', function() {
       done();
     });
   });
-  it('/testing endpoint check', function(done){
+  it('/junkTwilio endpoint check', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'JUNK', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -40,7 +40,7 @@ describe('Testing Normal 1', function() {
   });
   it('Normal items "A sofa"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'A sofa', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -52,7 +52,7 @@ describe('Testing Normal 1', function() {
   });
   it('Normal location "246 Saint Phillip Ct. Fremont, CA"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': '246 Saint Phillip Ct. Fremont, CA', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -64,7 +64,7 @@ describe('Testing Normal 1', function() {
   });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -78,7 +78,7 @@ describe('Testing Normal 1', function() {
   });
   it('Normal polarAns "Yes"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Yes', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -90,7 +90,7 @@ describe('Testing Normal 1', function() {
   });
   it('Normal contact "Pranav Jain"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Pranav Jain', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -104,9 +104,9 @@ describe('Testing Normal 1', function() {
   });
 });
 describe('Testing Normal (remembers name) 2', function() {
-  it('/testing Normal "JUNK"', function(done){
+  it('/junkTwilio Normal "JUNK"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'JUNK', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -119,7 +119,7 @@ describe('Testing Normal (remembers name) 2', function() {
   });
   it('Normal items "A sofa and a couch"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'A sofa and a couch', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -131,7 +131,7 @@ describe('Testing Normal (remembers name) 2', function() {
   });
   it('Normal location "246 Saint Phillip Ct. Fremont, CA"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': '246 Saint Phillip Ct. Fremont, CA', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -143,7 +143,7 @@ describe('Testing Normal (remembers name) 2', function() {
   });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -157,7 +157,7 @@ describe('Testing Normal (remembers name) 2', function() {
   });
   it('Normal polarAns "Yes"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Yes', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -175,9 +175,9 @@ describe('Testing Multiple time changes 3', function() {
       done();
     });
   });
-  it('/testing endpoint check', function(done){
+  it('/junkTwilio endpoint check', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'JUNK', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -190,7 +190,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal items "a sofa, couch and tv"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'A sofa, couch and tv', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -202,7 +202,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal location 246 Saint Phillip Ct. Fremont, CA', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': '246 Saint Phillip Ct. Fremont, CA', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -214,7 +214,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal dateTime 2pm', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -228,7 +228,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal polarAns "No"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Nope', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -240,7 +240,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal dateTime "5pm"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'next tuesday at 5pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -254,7 +254,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal polarAns "No"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'no', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -266,7 +266,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal dateTime "12pm"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'next tuesday at 12pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -280,7 +280,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal polarAns "Yes"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'yep', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -292,7 +292,7 @@ describe('Testing Multiple time changes 3', function() {
   });
   it('Normal contact "Pranav Jain"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Pranav Jain', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -320,9 +320,9 @@ describe('Testing with weird name 4', function() {
       done();
     });
   });
-  it('/testing endpoint check', function(done){
+  it('/junkTwilio endpoint check', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'JUNK', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -335,7 +335,7 @@ describe('Testing with weird name 4', function() {
   });
   it('Normal items "A sofa"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'A sofa', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -347,7 +347,7 @@ describe('Testing with weird name 4', function() {
   });
   it('Normal location "246 Saint Phillip Ct. Fremont, CA"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': '246 Saint Phillip Ct. Fremont, CA', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -359,7 +359,7 @@ describe('Testing with weird name 4', function() {
   });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -373,7 +373,7 @@ describe('Testing with weird name 4', function() {
   });
   it('Normal polarAns "Yes"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Yes', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
@@ -385,7 +385,7 @@ describe('Testing with weird name 4', function() {
   });
   it('Normal contact "Yay Text2Haul"', function(done){
     chai.request(server)
-    .post('/testing')
+    .post('/junkTwilio')
     .send({'Body': 'Yay Text2Haul', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);

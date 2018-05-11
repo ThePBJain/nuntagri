@@ -42,14 +42,16 @@ var User = new Schema({
         default: 'User'
     },
     typeData: {
-    	type: Schema.Types.Mixed 
+    	type: Schema.Types.Mixed
     },
     name: {
     	type: String,
     },
+    address: {
+      type: String
+    },
     stripe: {
         type: String,
-        unique: true,
         default: "NAN"
     }
 });

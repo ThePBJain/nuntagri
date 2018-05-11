@@ -190,6 +190,7 @@ function sendJobToDirtyDog(order) {
 	var timeStamp = d.getTime()/1000;
 	console.log("Date Object: " + d);
 	console.log("Timestamp: " + timeStamp);
+  var abbr = abbrRegion(order.location.state, "abbr");
 	var options = { method: 'POST',
 	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
 	  headers:
@@ -203,25 +204,27 @@ function sendJobToDirtyDog(order) {
 		 cFirstName: fname, // collected by name
 		 cLastName: lname, // find a way to split this up
 		 cAddress: order.location.string,
-		 //cCity: 'Middletown', //you could pull this from geocoder...
-		 //cState: 'PA', //you could pull this from geocoder...
-		 //cZip: '17112', //you could pull this from geocoder...
+		 cCity: order.location.city, //you could pull this from geocoder...
+		 cState: abbr, //you could pull this from geocoder...
+		 cZip: order.location.zipcode, //you could pull this from geocoder...
 		 cHomeArea: phone.substring(0,3), // phone number broken up into parts
 		 cHomePre: phone.substring(3,6), // phone number broken up into parts
 		 cHomeSuf: phone.substring(6), // phone number broken up into parts
 		 jAddress: order.location.string, //always same as cAddress
-		 //jCity: 'Middletown', //umm... you could pull this from geocoder...
-		 //jState: 'PA', //umm... you could pull this from geocoder...
-		 //jZip: '17112', //umm... you could pull this from geocoder...
+		 jCity: order.location.city, //umm... you could pull this from geocoder...
+		 jState: abbr, //umm... you could pull this from geocoder...
+		 jZip: order.location.zipcode, //umm... you could pull this from geocoder...
 		 jJunkOther: order.items // items would go here
 		 } };
 
 		 console.log("Options: " + JSON.stringify(options));
 
 	request(options, function (error, response, body) {
-	  if (error) throw new Error(error);
+	  if (error){
+      console.log("error: " + error);
+    }
 
-	  console.log(body);
+	  console.log("Response: " + response);
 	  //look only for a 200 response code...
 	});
 
@@ -255,84 +258,84 @@ const findOrCreateSession = (fbid) => {
     // No session found for user fbid, let's create a new one
     sessionId = new Date().toISOString(); //123456789
     sessions[sessionId] = {
-				fbid: fbid, // phone number for sms users
-				conversationTime: null,
-				context: {
+      fbid: fbid, // phone number for sms users
+      conversationTime: null,
+      context: {
 
-				},
-				name: null,
-				seller: null, //  {list: [{name: product, amount: load}]}
-				buyer: null, // {orders:...
-				deliverer: null, //
-				items: null, //will be an array for junk hauling
-				location: null,
-				time: null,
-				message: "",
-				text: ""
-	};
-    User.findOne({ phoneID: fbid}, function(err, user){
-    	console.log("Made it into here. Found user: " + user);
-    	if (err) {
-                console.log(err);
-            }
-        if (!user) {
-            //create new model
-            console.log("Found no user");
-			var newUser = new User({
-				phoneID: fbid
-			});
-			newUser.save(function(err, user){
-				if(err){
-					console.log(err);
-				}else{
-					console.log(user);
-				}
-			});
-			sessions[sessionId] = {
-				fbid: fbid, // phone number for sms users
-				conversationTime: null,
-				context: {
-
-				},
-				name: null,
-				seller: null, //  {list: [{name: product, amount: load}]}
-				buyer: null, // {orders:...
-				deliverer: null, //
-				items: null, //will be an array for junk hauling
-				location: null,
-				time: null,
-				message: "",
-				text: ""
-			};
-        }else{
-        	//load old model from mongodb
-        	console.log("Found user");
-        	const type = user.userType;
-        	sessions[sessionId] = {
-				fbid: fbid, // phone number for sms users
-				conversationTime: null,
-				context: {
-
-				},
-				name: user.name,
-				seller: null, //  {list: [{name: product, amount: load}]}
-				buyer: null, // {orders:...
-				deliverer: null, //
-				items: null, //will be an array for junk hauling
-				location: null,
-				time: null,
-				message: "",
-				text: ""
-			};
-			sessions[sessionId][type] = user.typeData;
-			//DONT FORGET THIS
-			user.markModified('typeData');
+      },
+      name: null,
+      seller: null, //  {list: [{name: product, amount: load}]}
+      buyer: null, // {orders:...
+        deliverer: null, //
+        items: null, //will be an array for junk hauling
+        location: null,
+        time: null,
+        message: "",
+        text: ""
+      };
+      User.findOne({ phoneID: fbid}, function(err, user){
+        //console.log("Made it into here. Found user: " + user);
+        if (err) {
+          console.log(err);
         }
-    });
-  }
-  console.log(JSON.stringify(sessions));
-  return sessionId;
-};
+        if (!user) {
+          //create new model
+          console.log("Found no user");
+          var newUser = new User({
+            phoneID: fbid
+          });
+          newUser.save(function(err, user){
+            if(err){
+              console.log(err);
+            }else{
+              console.log(user);
+            }
+          });
+          sessions[sessionId] = {
+            fbid: fbid, // phone number for sms users
+            conversationTime: null,
+            context: {
+
+            },
+            name: null,
+            seller: null, //  {list: [{name: product, amount: load}]}
+            buyer: null, // {orders:...
+              deliverer: null, //
+              items: null, //will be an array for junk hauling
+              location: null,
+              time: null,
+              message: "",
+              text: ""
+            };
+          }else{
+            //load old model from mongodb
+            console.log("Found user");
+            const type = user.userType;
+            sessions[sessionId] = {
+              fbid: fbid, // phone number for sms users
+              conversationTime: null,
+              context: {
+
+              },
+              name: user.name,
+              seller: null, //  {list: [{name: product, amount: load}]}
+              buyer: null, // {orders:...
+                deliverer: null, //
+                items: null, //will be an array for junk hauling
+                location: null,
+                time: null,
+                message: "",
+                text: ""
+              };
+              sessions[sessionId][type] = user.typeData;
+              //DONT FORGET THIS
+              user.markModified('typeData');
+            }
+          });
+        }
+        //console.log(JSON.stringify(sessions));
+        return sessionId;
+      };
 
 
 // Method to read entities and get values if exists
@@ -441,6 +444,124 @@ const selectDeliverers = (order, sessionId) => {
 	}
 
 };
+
+//-----------------------------------------------------------------
+// DateTime Helper functions
+// Check if timezone is in Daylight savings time
+
+Date.prototype.stdTimezoneOffset = function () {
+    var jan = new Date(this.getFullYear(), 0, 1);
+    var jul = new Date(this.getFullYear(), 6, 1);
+    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+}
+
+Date.prototype.isDstObserved = function () {
+    return this.getTimezoneOffset() < this.stdTimezoneOffset();
+}
+
+//-----------------------------------------------------------------
+// State Abbreviation conversion
+// Convert full state name to the abbr version
+function abbrRegion(input, to) {
+    var states = [
+        ['Alabama', 'AL'],
+        ['Alaska', 'AK'],
+        ['American Samoa', 'AS'],
+        ['Arizona', 'AZ'],
+        ['Arkansas', 'AR'],
+        ['Armed Forces Americas', 'AA'],
+        ['Armed Forces Europe', 'AE'],
+        ['Armed Forces Pacific', 'AP'],
+        ['California', 'CA'],
+        ['Colorado', 'CO'],
+        ['Connecticut', 'CT'],
+        ['Delaware', 'DE'],
+        ['District Of Columbia', 'DC'],
+        ['Florida', 'FL'],
+        ['Georgia', 'GA'],
+        ['Guam', 'GU'],
+        ['Hawaii', 'HI'],
+        ['Idaho', 'ID'],
+        ['Illinois', 'IL'],
+        ['Indiana', 'IN'],
+        ['Iowa', 'IA'],
+        ['Kansas', 'KS'],
+        ['Kentucky', 'KY'],
+        ['Louisiana', 'LA'],
+        ['Maine', 'ME'],
+        ['Marshall Islands', 'MH'],
+        ['Maryland', 'MD'],
+        ['Massachusetts', 'MA'],
+        ['Michigan', 'MI'],
+        ['Minnesota', 'MN'],
+        ['Mississippi', 'MS'],
+        ['Missouri', 'MO'],
+        ['Montana', 'MT'],
+        ['Nebraska', 'NE'],
+        ['Nevada', 'NV'],
+        ['New Hampshire', 'NH'],
+        ['New Jersey', 'NJ'],
+        ['New Mexico', 'NM'],
+        ['New York', 'NY'],
+        ['North Carolina', 'NC'],
+        ['North Dakota', 'ND'],
+        ['Northern Mariana Islands', 'NP'],
+        ['Ohio', 'OH'],
+        ['Oklahoma', 'OK'],
+        ['Oregon', 'OR'],
+        ['Pennsylvania', 'PA'],
+        ['Puerto Rico', 'PR'],
+        ['Rhode Island', 'RI'],
+        ['South Carolina', 'SC'],
+        ['South Dakota', 'SD'],
+        ['Tennessee', 'TN'],
+        ['Texas', 'TX'],
+        ['US Virgin Islands', 'VI'],
+        ['Utah', 'UT'],
+        ['Vermont', 'VT'],
+        ['Virginia', 'VA'],
+        ['Washington', 'WA'],
+        ['West Virginia', 'WV'],
+        ['Wisconsin', 'WI'],
+        ['Wyoming', 'WY'],
+    ];
+
+    // So happy that Canada and the US have distinct abbreviations
+    var provinces = [
+        ['Alberta', 'AB'],
+        ['British Columbia', 'BC'],
+        ['Manitoba', 'MB'],
+        ['New Brunswick', 'NB'],
+        ['Newfoundland', 'NF'],
+        ['Northwest Territory', 'NT'],
+        ['Nova Scotia', 'NS'],
+        ['Nunavut', 'NU'],
+        ['Ontario', 'ON'],
+        ['Prince Edward Island', 'PE'],
+        ['Quebec', 'QC'],
+        ['Saskatchewan', 'SK'],
+        ['Yukon', 'YT'],
+    ];
+
+    var regions = states.concat(provinces);
+
+    var i; // Reusable loop variable
+    if (to == 'abbr') {
+        input = input.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
+        for (i = 0; i < regions.length; i++) {
+            if (regions[i][0] == input) {
+                return (regions[i][1]);
+            }
+        }
+    } else if (to == 'name') {
+        input = input.toUpperCase();
+        for (i = 0; i < regions.length; i++) {
+            if (regions[i][1] == input) {
+                return (regions[i][0]);
+            }
+        }
+    }
+}
 
 //-----------------------------------------------------------------
 // Invoice Generation and Sending
@@ -576,56 +697,65 @@ function items(sessionId, context, entities) {
 
 function verifyAddress(sessionId, context, entities) {
   //used only for demo to find cart that addToCart method will send it too.
+  //todo: get this function to wait to complete before returning...
     var loc = firstEntityValue(entities, 'location')
     console.log("Location understood by wit.ai: " + loc.value);
     if(loc){
-    geocoder.geocode(loc)
+      geocoder.geocode(loc.value)
       .then(function(res) {
-        console.log(res);
+        //console.log(res);
         if(res.length != 0){
           console.log("We found the geolocation.");
-            var location = {
-              string: loc.value,
-              latitude: res[0].latitude,
-              longitude: res[0].longitude
-            }
+          var location = {
+            string: loc.value,
+            latitude: res[0].latitude,
+            longitude: res[0].longitude,
+            city: res[0].city,
+            state: res[0].state,
+            zipcode: res[0].zipcode
+          }
 
-            sessions[sessionId].location = location;
+          sessions[sessionId].location = location;
 
-        delete context.fail;
-        context.success = true;
+          delete context.fail;
+          context.success = true;
 
         }else{
           //should do this but will accept for now
           //delete context.success;
-        //context.fail = true;
-        var location = {
-              string: loc.value,
-              latitude: 0.0,
-              longitude: 0.0
-            }
-            sessions[sessionId].location = location;
-            delete context.fail;
-        context.success = true;
+          //context.fail = true;
+          console.log("We failed to find location.");
+          var location = {
+            string: loc.value,
+            latitude: 0.0,
+            longitude: 0.0
+          }
+          sessions[sessionId].location = location;
+          delete context.fail;
+          context.success = true;
         }
         //sessions[sessionId].location = loc;
       }).catch(function(err) {
         console.log(err);
         delete context.success;
-      context.fail = true;
+        context.fail = true;
       });
     }else{
       console.log("Could not identify location from wit.ai");
       delete context.success;
       context.fail = true;
     }
-}
-function checkDateTime(sessionId, context, entities) {
-  //used only for demo to find cart that addToCart method will send it too.
+  }
+  function checkDateTime(sessionId, context, entities) {
+    //used only for demo to find cart that addToCart method will send it too.
     var dayTime = firstEntityValue(entities, 'datetime');
     if(context.fail){
       delete context.fail;
     }
+
+    //East coast time difference
+    var timezoneOff = -5;
+
     console.log("dateTime: " + dayTime.value);
     if(dayTime.value){
       delete context.fail;
@@ -633,12 +763,20 @@ function checkDateTime(sessionId, context, entities) {
       var date = new Date(dayTime.value);
       date.setMinutes(0);
       date.setSeconds(0);
+
+      //check to see if we're in Daylight savings time (DST)
+      if (date.isDstObserved()) {
+          console.log ("Daylight saving time!");
+          timezoneOff++;
+      }
+
       //to fit time windows that we have set up (2 hours each) from 8 am to 6pm
-      if(date.getHours() % 2 != 0){
-        date.setHours(date.getHours() - 1);
+      //include timezone offset to see everything in east coast time
+      if((date.getUTCHours() + timezoneOff) % 2 != 0){
+        date.setUTCHours(date.getUTCHours() - 1);
       }
       //date is coming in wrong because of system time zone
-      var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+      var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
 
       //testing by putting date object in here so we can do other things too.
       sessions[sessionId].time = dayTime.value;
@@ -653,7 +791,7 @@ function checkDateTime(sessionId, context, entities) {
         console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         delete context.foundTime;
         context.fail = true;
-      }else if(date.getHours() < 8 || date.getHours() >= 18){
+      }else if((date.getUTCHours() + timezoneOff) < 8 || (date.getUTCHours() + timezoneOff) >= 18){
         console.log("Out of scope with windows!!!!!!");
         delete context.foundTime;
         context.fail = true;
@@ -672,7 +810,7 @@ function setName(sessionId, context, entities) {
     }
     if(name){
       var User = require('./models/user');
-      User.findOne({ email: name }, function (err, user) {
+      User.findOne({ name: name }, function (err, user) {
         if (err){
           console.log(err);
         }else{
@@ -1623,7 +1761,7 @@ app.post('/testing', function (req, res) {
 
 	if(text){
 		// We received a text message
-
+        //todo: setup promises so that everything is synchronous
         // Let's forward the message to the Wit.ai Bot Engine
         // This will run all actions until our bot has nothing left to do
         return witJunk.message(text).then(({entities}) => {
@@ -1646,6 +1784,15 @@ app.post('/testing', function (req, res) {
               sessions[sessionId].message += ("\n" + "Great!  Please provide the property address with your zip code.");
             }
           }else if(location){
+            //todo: setup so that could pull location data from database and offer that instead
+            //if location was found, make sure that location entity contains the house numbers
+            var index = text.indexOf(location.value);
+            var n = text.lastIndexOf(" ", index-2);
+            //if -1 then put 0 to start at beginning anyways
+            n = n<0 ? 0 : n;
+            var str = text.substring(n, index + location.value.length);
+            //make sure to tighten scope so only takes numbers right before... not "I live at ..."
+            entities.location[0].value = str;
             verifyAddress(sessionId, context, entities);
             console.log("Ok, what date and time would you like service.");
             if(recipientId.substring(0,6) == "100011"){
@@ -1656,8 +1803,12 @@ app.post('/testing', function (req, res) {
             console.log("Would a two hour window starting at this time work for you? (yes/no only):");
             console.log(context.foundTime);
             if(recipientId.substring(0,6) == "100011"){
-              sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"
-                                                 + context.foundTime);
+              if(context.fail == true){
+                sessions[sessionId].message += ("\n" + "We cannot accomodate that time. What other day & time would work?");
+              }else{
+                sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"
+                                                   + context.foundTime);
+              }
             }
 
           }else if(polarAns && polarAns.value == "No"){
@@ -1718,7 +1869,7 @@ app.post('/testing', function (req, res) {
     				//deleting the entire session...
     				var temp = sessions[sessionId];
     				User.update( {phoneID: sessions[sessionId].fbid}, {
-    					name: sessions[sessionId].name
+    					name: sessions[sessionId].name, address: sessions[sessionId].location.string
     				}, function(err, numberAffected, rawResponse) {
        					//handle it
        					if(err){
@@ -1984,3 +2135,4 @@ if(PORT == 443){
 	http.createServer(app).listen(PORT);
 }
 console.log('Listening on port: ' + PORT + '...');
+module.exports = app;

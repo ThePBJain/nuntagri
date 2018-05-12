@@ -5,6 +5,7 @@ var uriRoot = process.env.RUN_ENV || 'localhost';
 // mongo uri
 config.mongoURI = {
   development: "mongodb://" + uriRoot + "/nuntagri",
+  production: "mongodb://" + uriRoot + "/nuntagri",
   test: "mongodb://" + uriRoot + "/nuntagri-test",
   stage: process.env.MONGOLAB_URI
 };

@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "mocha --timeout 10000 -g 'Test emailing invoice' --exit"
+    "test": "mocha --timeout 10000 --exit"
   },
   "engines": {
     "node": "6.2.2"

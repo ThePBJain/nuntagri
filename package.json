@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "mocha --timeout 10000 --exit"
+    "test": "mocha --timeout 10000 -g 'Test emailing invoice' --exit"
   },
   "engines": {
     "node": "6.2.2"
@@ -13,8 +13,9 @@
   "author": "Pranav Jain <pranajain@gmail.com>",
   "license": "ISC",
   "dependencies": {
+    "@sendgrid/mail": "^6.2.1",
     "bcryptjs": "^2.4.3",
-    "body-parser": "^1.15.2",
+    "body-parser": "^1.18.2",
     "dateformat": "^2.0.0",
     "dotenv": "^4.0.0",
     "express": "^4.16.3",

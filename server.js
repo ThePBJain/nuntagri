@@ -26,8 +26,8 @@ var https = require('https');
 var fs = require('fs');
 
 //email sending related
-var helper = require('sendgrid').mail;
-var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 //twilio specific
 var twilio = require('twilio');
@@ -566,6 +566,8 @@ function abbrRegion(input, to) {
 // Invoice Generation and Sending
 // Create new invoice and email to Dirty Dog
 function generateInvoice(invoice, filename, success, error) {
+  //formatting date into readable version
+  invoice.date = dateFormat(invoice.date, "mediumDate");
 	var postData = JSON.stringify(invoice);
 	var options = {
 		hostname  : "invoice-generator.com",
@@ -629,42 +631,39 @@ generateInvoice(invoice, 'invoice.pdf', function() {
 }, function(error) {
 	console.error(error);
 });*/
-function sendEmail(userEmail){
-	var mail = new helper.Mail();
-	var email = new helper.Email('invoice@nuntagri.com', 'NuntAgri Billing');
-	mail.setFrom(email);
+function sendEmail(userEmail, success, error){
 
-	mail.setSubject('Invoice from NuntAgri');
 
-	var personalization = new helper.Personalization();
-	email = new helper.Email(userEmail);
-	personalization.addTo(email);
-	mail.addPersonalization(personalization);
-
-	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body>Invoice: <iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
-	mail.addContent(content);
-
-	var attachment = new helper.Attachment();
 	var file = fs.readFileSync('invoice.pdf');
 	var base64File = new Buffer(file).toString('base64');
-	attachment.setContent(base64File);
-	attachment.setType('application/pdf');
-	attachment.setFilename('invoice.pdf');
-	attachment.setDisposition('inline');//inline
-	attachment.setContentId("139db99fdb5c3704");
-	mail.addAttachment(attachment);
-
-	var sgRequest = sg.emptyRequest({
-	  	method: 'POST',
-	  	path: '/v3/mail/send',
-	  	body: mail.toJSON(),
-	});
-
-	sg.API(sgRequest, function(err, response) {
-		  console.log(response.statusCode);
-		  console.log(response.body);
-		  console.log(response.headers);
-	});
+  const msg = {
+    to: userEmail,
+    from: {
+      name: 'NuntAgri Billing',
+      email: 'invoice@nuntagri.com'
+    },
+    subject: 'Invoice from NuntAgri Inc.',
+    text: "Dear User, \n\nThank you for using NuntAgri. Full details about your service use, are detailed in the invoice attached below. \n\nIf you have any questions about your service use, call (510) 579-9664.\n\nThanks,\n\nNuntagri Inc.",
+    //html: '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body></body></html>',
+    attachments: [
+      {
+        content: base64File,
+        filename: 'invoice.pdf',
+        type: 'application/pdf',
+        disposition: 'attachment'
+      }
+    ]
+  };
+  sgMail.send(msg, (err, result) => {
+    if (err) {
+      //Do something with the error
+      error(err);
+    }
+    else {
+      //Celebrate
+      success(result);
+    }
+  });
 }
 
 
@@ -888,6 +887,7 @@ function junkOrder(sessionId, context, entities) {
             to: "Dirty Dog Hauling",
             currency: "usd",
             number: invoiceNum,
+            "date": new Date(),
             payment_terms: "Auto-Billed - Do Not Pay",
             items: [
               {
@@ -917,8 +917,12 @@ function junkOrder(sessionId, context, entities) {
               }else{
                 const customer = customers.data[0];
                 generateInvoice(invoice, 'invoice.pdf', function() {
-                console.log("Saved invoice to invoice.pdf");
-                sendEmail(customer.email);
+                  console.log("Saved invoice to invoice.pdf");
+                  sendEmail(customer.email, function(result){
+                    console.log("RESULT: " + JSON.stringify(result));
+                  }, function(error){
+                    console.log("ERROR: " + error);
+                  });
               }, function(error) {
                 console.error(error);
               });
@@ -2137,4 +2141,10 @@ if(PORT == 443){
 	http.createServer(app).listen(PORT);
 }
 console.log('Listening on port: ' + PORT + '...');
-module.exports = app;
+//module.exports = app;
+module.exports = {
+  abbrRegion: abbrRegion,
+  generateInvoice: generateInvoice,
+  sendEmail: sendEmail,
+  app: app
+};

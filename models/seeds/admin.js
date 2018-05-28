@@ -16,6 +16,19 @@ var seedAdmin = function() {
         user.save();
         console.log('Dummy admin added!');
       });
+      //add client
+      var password = 'dirtydoghauling';
+      var user = new User({
+        email: 'lnelson@dirtydoghauling.com',
+        admin: false,
+        password: password,
+        stripe: 'cus_A9PiFpEe2vpHCI'
+      });
+      user.generateHash(password, function(err, hash) {
+        user.password = hash;
+        user.save();
+        console.log('Dummy client added!');
+      });
     }
   });
 };

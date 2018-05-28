@@ -64,7 +64,7 @@ describe('Testing Normal 1', function() {
   it('Normal dateTime "2pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
-    .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
+    .send({'Body': 'next thursday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
       console.log(res.text);
@@ -143,7 +143,7 @@ describe('Testing Normal (remembers name) 2', function() {
   it('Normal dateTime "2pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
-    .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
+    .send({'Body': 'next thursday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
       console.log(res.text);
@@ -211,10 +211,24 @@ describe('Testing Multiple time changes 3', function() {
       });
     });
   });
+  it('Failure dateTime "next week"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'next week', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      console.log(res.text);
+      parseString(res.text, function (err, result) {
+        console.dir(result);
+        expect(result.Response.Message[0]).to.have.string("\nPlease provide an exact date & time for service.");
+        done();
+      });
+    });
+  });
   it('Normal dateTime 2pm', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
-    .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
+    .send({'Body': 'next thursday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
       console.log(res.text);
@@ -240,7 +254,7 @@ describe('Testing Multiple time changes 3', function() {
   it('Normal dateTime "5pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
-    .send({'Body': 'next tuesday at 5pm', 'From': '+15105555421'})
+    .send({'Body': 'next thursday at 5pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
       console.log(res.text);
@@ -266,7 +280,7 @@ describe('Testing Multiple time changes 3', function() {
   it('Normal dateTime "12pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
-    .send({'Body': 'next tuesday at 12pm', 'From': '+15105555421'})
+    .send({'Body': 'next thursday at 12pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
       console.log(res.text);
@@ -355,10 +369,24 @@ describe('Testing with weird name 4', function() {
       });
     });
   });
+  it('Failure dateTime "next thursday 10-12"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'next thursday 10-12', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      console.log(res.text);
+      parseString(res.text, function (err, result) {
+        console.dir(result);
+        expect(result.Response.Message[0]).to.have.string("\nPlease provide an exact date & time for service.");
+        done();
+      });
+    });
+  });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
-    .send({'Body': 'next tuesday at 2pm', 'From': '+15105555421'})
+    .send({'Body': 'next thursday at 2pm', 'From': '+15105555421'})
     .end(function(err, res){
       expect(res).to.have.status(200);
       console.log(res.text);

@@ -346,7 +346,7 @@ const firstEntityValue = (entities, entity) => {
   if (!val) {
     return null;
   }
-  console.log("firstEntity: " + val);
+  console.log("firstEntity: " + JSON.stringify(val));
   //return typeof val === 'object' ? val.value : val;
   return val;
 };
@@ -650,7 +650,8 @@ function sendEmail(userEmail, success, error){
         content: base64File,
         filename: 'invoice.pdf',
         type: 'application/pdf',
-        disposition: 'attachment'
+        disposition: 'attachment',
+        contentId: 'mytext'
       }
     ]
   };
@@ -747,8 +748,9 @@ function verifyAddress(sessionId, context, entities) {
   function checkDateTime(sessionId, context, entities) {
     //used only for demo to find cart that addToCart method will send it too.
     var dayTime = firstEntityValue(entities, 'datetime');
-    if(context.fail){
+    if(context.fail || context.highGrain){
       delete context.fail;
+      delete context.highGrain;
     }
 
     //East coast time difference
@@ -786,7 +788,11 @@ function verifyAddress(sessionId, context, entities) {
       //this is in hours
       //console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
       //console.log("This is what new Object looks like: " + date);
-      if( (date-(new Date()))/(1000*60*60) < 2.0) {
+      if(dayTime.grain == 'day' || dayTime.grain == 'week'){
+        console.log("Too low grain to answer");
+        delete context.foundTime;
+        context.highGrain = true;
+      }else if( (date-(new Date()))/(1000*60*60) < 2.0) {
         console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         delete context.foundTime;
         context.fail = true;
@@ -903,24 +909,17 @@ function junkOrder(sessionId, context, entities) {
               console.log("Leads: " + numJunkLeadsSent);
 
               //get customer and charge him
-              stripe.customers.list({
-                  limit: 3,
-                  created: {
-                    lt: "1499552052"
-                  }
-
-               },
-            function(err, customers) {
-              // asynchronously called
-              if(err){
-                console.log(err);
-              }else{
-                const customer = customers.data[0];
-                generateInvoice(invoice, 'invoice.pdf', function() {
-                  console.log("Saved invoice to invoice.pdf");
-                  sendEmail(customer.email, function(result){
-                    console.log("RESULT: " + JSON.stringify(result));
-                  }, function(error){
+              stripe.customers.retrieve("cus_A9PiFpEe2vpHCI",
+              function(err, customer) {
+                // asynchronously called
+                if(err){
+                  console.log(err);
+                }else{
+                  generateInvoice(invoice, 'invoice.pdf', function() {
+                    console.log("Saved invoice to invoice.pdf");
+                    sendEmail(customer.email, function(result){
+                      console.log("RESULT: " + JSON.stringify(result));
+                    }, function(error){
                     console.log("ERROR: " + error);
                   });
               }, function(error) {
@@ -929,7 +928,8 @@ function junkOrder(sessionId, context, entities) {
                 stripe.charges.create({
                   amount: leadsCharged*rate*100,
                   currency: "usd",
-                  customer: customer.id // Previously stored, then retrieved
+                  customer: customer.id, // Previously stored, then retrieved
+                  receipt_email: customer.email
               }, function(err, charge) {
                   // asynchronously called
                   if(err){
@@ -1802,7 +1802,10 @@ app.post('/junkTwilio', function (req, res) {
             console.log("Would a two hour window starting at this time work for you? (yes/no only):");
             console.log(context.foundTime);
             if(recipientId.substring(0,6) == "100011"){
-              if(context.fail == true){
+
+              if(context.highGrain){
+                sessions[sessionId].message += ("\n" + "Please provide an exact date & time for service.");
+              }else if(context.fail == true){
                 sessions[sessionId].message += ("\n" + "We cannot accomodate that time. What other day & time would work?");
               }else{
                 sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"

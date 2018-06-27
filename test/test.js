@@ -61,6 +61,10 @@ describe('Testing Normal 1', function() {
       });
     });
   });
+  it('Timeout', function(done){
+    setTimeout(done, 3000);
+
+  });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
@@ -140,6 +144,10 @@ describe('Testing Normal (remembers name) 2', function() {
       });
     });
   });
+  it('Timeout', function(done){
+    setTimeout(done, 3000);
+
+  });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
@@ -210,6 +218,10 @@ describe('Testing Multiple time changes 3', function() {
         done();
       });
     });
+  });
+  it('Timeout', function(done){
+    setTimeout(done, 3000);
+
   });
   it('Failure dateTime "next week"', function(done){
     chai.request(server.app)
@@ -369,6 +381,10 @@ describe('Testing with weird name 4', function() {
       });
     });
   });
+  it('Timeout', function(done){
+    setTimeout(done, 3000);
+
+  });
   it('Failure dateTime "next thursday 10-12"', function(done){
     chai.request(server.app)
     .post('/junkTwilio')
@@ -474,6 +490,10 @@ describe('Testing with weird item', function() {
         done();
       });
     });
+  });
+  it('Timeout', function(done){
+    setTimeout(done, 3000);
+
   });
   it('Normal dateTime "2pm"', function(done){
     chai.request(server.app)

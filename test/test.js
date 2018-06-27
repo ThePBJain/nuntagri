@@ -424,7 +424,98 @@ describe('Testing with weird name 4', function() {
     });
   });
 });
-
+describe('Testing with weird item', function() {
+  before(function(done){
+    User.remove({phoneID: '10001115105555421'}, function(){
+      done();
+    });
+  });
+  it('Root Endpoint check', function(done) {
+    chai.request(server.app)
+    .get('/')
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      done();
+    });
+  });
+  it('/junkTwilio endpoint check', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'JUNK', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      //console.log(res.text);
+      parseString(res.text, function (err, result) {
+        expect(result.Response.Message[0]).to.equal("\nHi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
+        done();
+      });
+    });
+  });
+  it('weird item "General debris"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'General debris', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      parseString(res.text, function (err, result) {
+        expect(result.Response.Message[0]).to.equal("\nGreat!  Please provide the property address with your zip code.");
+        done();
+      });
+    });
+  });
+  it('Normal location "246 Saint Phillip Ct. Fremont, CA"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': '246 Saint Phillip Ct. Fremont, CA', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      parseString(res.text, function (err, result) {
+        expect(result.Response.Message[0]).to.equal("\nOk, what date and time would you like service.");
+        done();
+      });
+    });
+  });
+  it('Normal dateTime "2pm"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'next thursday at 2pm', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      console.log(res.text);
+      parseString(res.text, function (err, result) {
+        console.dir(result);
+        expect(result.Response.Message[0]).to.have.string("\nWould a two hour window starting at this time work for you? (yes/no only):");
+        done();
+      });
+    });
+  });
+  it('Normal polarAns "Yes"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'Yes', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      parseString(res.text, function (err, result) {
+        expect(result.Response.Message[0]).to.equal("\nWhat name should we use for this appointment?");
+        done();
+      });
+    });
+  });
+  it('Normal contact "Pranav Jain"', function(done){
+    chai.request(server.app)
+    .post('/junkTwilio')
+    .send({'Body': 'Yay Text2Haul', 'From': '+15105555421'})
+    .end(function(err, res){
+      expect(res).to.have.status(200);
+      console.log(res.text);
+      parseString(res.text, function (err, result) {
+        console.dir(result);
+        expect(result.Response.Message[0]).to.equal("\nYou are confirmed.  We will call you at this number (+15105555421), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+        done();
+      });
+    });
+  });
+});
 
 describe('Testing actionable functions', function() {
   it('Test geocoding "246 Saint Phillip Ct. Fremont, CA"', function(done){

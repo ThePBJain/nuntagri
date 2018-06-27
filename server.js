@@ -1833,14 +1833,21 @@ app.post('/junkTwilio', function (req, res) {
             }
           }else if(contact && contact.confidence > 0.6 || context.getName){
             //console.log("WE IN HERE BOIIIIII");
-            if(!contact){
-              entities.contact = [{"value": text}];
-            }
-            setName(sessionId, context, entities);
-            junkOrder(sessionId, context, entities);
-            console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
-            if(recipientId.substring(0,6) == "100011"){
-              sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+            if(sessions[sessionId].items == null){
+              console.log("I'm sorry. Could you be more specific about what items you'd like hauled.");
+              if(recipientId.substring(0,6) == "100011"){
+                sessions[sessionId].message += ("\n" + "I'm sorry. Could you be more specific about what items you'd like hauled.");
+              }
+            }else{
+              if(!contact){
+                entities.contact = [{"value": text}];
+              }
+              setName(sessionId, context, entities);
+              junkOrder(sessionId, context, entities);
+              console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+              if(recipientId.substring(0,6) == "100011"){
+                sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+              }
             }
           }else if((greeting || junkGreeting) && !polarAns){
             console.log("Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");

@@ -26,8 +26,8 @@ var https = require('https');
 var fs = require('fs');
 
 //email sending related
-var helper = require('sendgrid').mail;
-var sg = require('sendgrid')(process.env.SENDGRID_API_KEY);
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 //twilio specific
 var twilio = require('twilio');
@@ -346,7 +346,7 @@ const firstEntityValue = (entities, entity) => {
   if (!val) {
     return null;
   }
-  console.log("firstEntity: " + val);
+  console.log("firstEntity: " + JSON.stringify(val));
   //return typeof val === 'object' ? val.value : val;
   return val;
 };
@@ -566,6 +566,8 @@ function abbrRegion(input, to) {
 // Invoice Generation and Sending
 // Create new invoice and email to Dirty Dog
 function generateInvoice(invoice, filename, success, error) {
+  //formatting date into readable version
+  invoice.date = dateFormat(invoice.date, "mediumDate");
 	var postData = JSON.stringify(invoice);
 	var options = {
 		hostname  : "invoice-generator.com",
@@ -629,42 +631,40 @@ generateInvoice(invoice, 'invoice.pdf', function() {
 }, function(error) {
 	console.error(error);
 });*/
-function sendEmail(userEmail){
-	var mail = new helper.Mail();
-	var email = new helper.Email('invoice@nuntagri.com', 'NuntAgri Billing');
-	mail.setFrom(email);
+function sendEmail(userEmail, success, error){
 
-	mail.setSubject('Invoice from NuntAgri');
 
-	var personalization = new helper.Personalization();
-	email = new helper.Email(userEmail);
-	personalization.addTo(email);
-	mail.addPersonalization(personalization);
-
-	var content = new helper.Content('text/html', '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body>Invoice: <iframe src="cid:139db99fdb5c3704"></iframe></body></html>');
-	mail.addContent(content);
-
-	var attachment = new helper.Attachment();
 	var file = fs.readFileSync('invoice.pdf');
 	var base64File = new Buffer(file).toString('base64');
-	attachment.setContent(base64File);
-	attachment.setType('application/pdf');
-	attachment.setFilename('invoice.pdf');
-	attachment.setDisposition('inline');//inline
-	attachment.setContentId("139db99fdb5c3704");
-	mail.addAttachment(attachment);
-
-	var sgRequest = sg.emptyRequest({
-	  	method: 'POST',
-	  	path: '/v3/mail/send',
-	  	body: mail.toJSON(),
-	});
-
-	sg.API(sgRequest, function(err, response) {
-		  console.log(response.statusCode);
-		  console.log(response.body);
-		  console.log(response.headers);
-	});
+  const msg = {
+    to: userEmail,
+    from: {
+      name: 'NuntAgri Billing',
+      email: 'invoice@nuntagri.com'
+    },
+    subject: 'Invoice from NuntAgri Inc.',
+    text: "Dear User, \n\nThank you for using NuntAgri. Full details about your service use, are detailed in the invoice attached below. \n\nIf you have any questions about your service use, call (510) 579-9664.\n\nThanks,\n\nNuntagri Inc.",
+    //html: '<html><head><style type="text/css">html, body { margin: 0; padding: 0; border: 0; height: 100%; overflow: hidden;} iframe { width: 100%; height: 100%; border: 0}</style></head><body></body></html>',
+    attachments: [
+      {
+        content: base64File,
+        filename: 'invoice.pdf',
+        type: 'application/pdf',
+        disposition: 'attachment',
+        contentId: 'mytext'
+      }
+    ]
+  };
+  sgMail.send(msg, (err, result) => {
+    if (err) {
+      //Do something with the error
+      error(err);
+    }
+    else {
+      //Celebrate
+      success(result);
+    }
+  });
 }
 
 
@@ -748,8 +748,9 @@ function verifyAddress(sessionId, context, entities) {
   function checkDateTime(sessionId, context, entities) {
     //used only for demo to find cart that addToCart method will send it too.
     var dayTime = firstEntityValue(entities, 'datetime');
-    if(context.fail){
+    if(context.fail || context.highGrain){
       delete context.fail;
+      delete context.highGrain;
     }
 
     //East coast time difference
@@ -787,7 +788,11 @@ function verifyAddress(sessionId, context, entities) {
       //this is in hours
       //console.log("This is the differential: " + (date - (new Date()))/(1000*60*60));
       //console.log("This is what new Object looks like: " + date);
-      if( (date-(new Date()))/(1000*60*60) < 2.0) {
+      if(dayTime.grain == 'day' || dayTime.grain == 'week'){
+        console.log("Too low grain to answer");
+        delete context.foundTime;
+        context.highGrain = true;
+      }else if( (date-(new Date()))/(1000*60*60) < 2.0) {
         console.log("Within 2 hours!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         delete context.foundTime;
         context.fail = true;
@@ -888,6 +893,7 @@ function junkOrder(sessionId, context, entities) {
             to: "Dirty Dog Hauling",
             currency: "usd",
             number: invoiceNum,
+            "date": new Date(),
             payment_terms: "Auto-Billed - Do Not Pay",
             items: [
               {
@@ -903,29 +909,27 @@ function junkOrder(sessionId, context, entities) {
               console.log("Leads: " + numJunkLeadsSent);
 
               //get customer and charge him
-              stripe.customers.list({
-                  limit: 3,
-                  created: {
-                    lt: "1499552052"
-                  }
-
-               },
-            function(err, customers) {
-              // asynchronously called
-              if(err){
-                console.log(err);
-              }else{
-                const customer = customers.data[0];
-                generateInvoice(invoice, 'invoice.pdf', function() {
-                console.log("Saved invoice to invoice.pdf");
-                sendEmail(customer.email);
+              stripe.customers.retrieve("cus_A9PiFpEe2vpHCI",
+              function(err, customer) {
+                // asynchronously called
+                if(err){
+                  console.log(err);
+                }else{
+                  generateInvoice(invoice, 'invoice.pdf', function() {
+                    console.log("Saved invoice to invoice.pdf");
+                    sendEmail(customer.email, function(result){
+                      console.log("RESULT: " + JSON.stringify(result));
+                    }, function(error){
+                    console.log("ERROR: " + error);
+                  });
               }, function(error) {
                 console.error(error);
               });
                 stripe.charges.create({
                   amount: leadsCharged*rate*100,
                   currency: "usd",
-                  customer: customer.id // Previously stored, then retrieved
+                  customer: customer.id, // Previously stored, then retrieved
+                  receipt_email: customer.email
               }, function(err, charge) {
                   // asynchronously called
                   if(err){
@@ -1798,7 +1802,10 @@ app.post('/junkTwilio', function (req, res) {
             console.log("Would a two hour window starting at this time work for you? (yes/no only):");
             console.log(context.foundTime);
             if(recipientId.substring(0,6) == "100011"){
-              if(context.fail == true){
+
+              if(context.highGrain){
+                sessions[sessionId].message += ("\n" + "Please provide an exact date & time for service.");
+              }else if(context.fail == true){
                 sessions[sessionId].message += ("\n" + "We cannot accomodate that time. What other day & time would work?");
               }else{
                 sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"
@@ -1826,14 +1833,21 @@ app.post('/junkTwilio', function (req, res) {
             }
           }else if(contact && contact.confidence > 0.6 || context.getName){
             //console.log("WE IN HERE BOIIIIII");
-            if(!contact){
-              entities.contact = [{"value": text}];
-            }
-            setName(sessionId, context, entities);
-            junkOrder(sessionId, context, entities);
-            console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
-            if(recipientId.substring(0,6) == "100011"){
-              sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+            if(sessions[sessionId].items == null){
+              console.log("I'm sorry. Could you be more specific about what items you'd like hauled.");
+              if(recipientId.substring(0,6) == "100011"){
+                sessions[sessionId].message += ("\n" + "I'm sorry. Could you be more specific about what items you'd like hauled.");
+              }
+            }else{
+              if(!contact){
+                entities.contact = [{"value": text}];
+              }
+              setName(sessionId, context, entities);
+              junkOrder(sessionId, context, entities);
+              console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+              if(recipientId.substring(0,6) == "100011"){
+                sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
+              }
             }
           }else if((greeting || junkGreeting) && !polarAns){
             console.log("Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
@@ -2137,4 +2151,10 @@ if(PORT == 443){
 	http.createServer(app).listen(PORT);
 }
 console.log('Listening on port: ' + PORT + '...');
-module.exports = app;
+//module.exports = app;
+module.exports = {
+  abbrRegion: abbrRegion,
+  generateInvoice: generateInvoice,
+  sendEmail: sendEmail,
+  app: app
+};

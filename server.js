@@ -1714,6 +1714,80 @@ app.get('/twilio', function (req, res) {
 	}
 });
 
+
+const db = {
+  "Walnuts": 10,
+  "Peanuts": 5,
+  "Almonds": 2,
+  "Pistachios": 4
+};
+//message handler for twilio
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
+//find a way to fix that so we dont have this issue.
+app.post('/pricesTwilio', function (req, res) {
+  var text = req.body.Body; //message from twilio to send to Wit.
+  const twimlResp = new MessagingResponse();
+  //console.log(req);
+  console.log("\n\n Test: " + text);
+  //console.log("\n Query:" + JSON.stringify(req.query));
+  // We retrieve the user's current session, or create one if it doesn't exist
+  // This is needed for our bot to figure out the conversation history
+  //figure out how to fix sender to be twilio only
+  var sender = req.body.From;
+  // binary for #
+  sender = "100011" + sender.substring(1);
+  console.log("Sender: " + sender);
+
+
+  if(text){
+    // We received a text message
+    //todo: setup promises so that everything is synchronous
+    // Let's forward the message to the Wit.ai Bot Engine
+    // This will run all actions until our bot has nothing left to do
+    return witJunk.message(text).then(({entities}) => {
+      const intent = firstEntityValue(entities, 'intent');
+      const greeting = firstEntityValue(entities, 'greetings');
+      const item = firstEntityValue(entities, 'item');
+      console.log("Entities: " + JSON.stringify(entities));
+      if(item && item.confidence > 0.5){
+        items(sessionId, context, entities);
+        console.log("Great!  Please provide the property address with your zip code.");
+        if(recipientId.substring(0,6) == "100011"){
+          sessions[sessionId].message += ("\n" + "Great!  Please provide the property address with your zip code.");
+        }
+      }else{
+        console.log("Something went wrong.");
+        sessions[sessionId].message += ("\n" + "Something went wrong.");
+      }
+
+      console.log('Waiting for next user messages');
+      res.writeHead(200, {'Content-Type': 'text/xml'});
+      twimlResp.message(sessions[sessionId].message);
+      res.end(twimlResp.toString());
+
+
+
+      // Based on the session state, you might want to reset the session.
+      // This depends heavily on the business logic of your bot.
+      // Example:
+      // if (context['done']) {
+      //   delete sessions[sessionId];
+      // }
+
+      //Our logic is: if we have had success, failure, a final item, or we updated cart...
+      //reset the context
+
+    });
+  }else{
+    console.log('Failed to read text from twilio!!!');
+    res.writeHead(200, {'Content-Type': 'text/xml'});
+    twimlResp.message("Could not read your text.");
+    res.end(twimlResp.toString());
+  }
+
+});
+
+
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.

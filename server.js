@@ -191,7 +191,7 @@ function sendJobToDirtyDog(order) {
 	console.log("Timestamp: " + timeStamp);
   var abbr = abbrRegion(order.location.state, "abbr");
 	var options = { method: 'POST',
-	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
+	  url: 'about:blank', // Disabling Junk hauling 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
 	  headers:
 	   {
 		 'content-type': 'application/x-www-form-urlencoded' },

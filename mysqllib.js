@@ -17,12 +17,13 @@ let pool = mysql.createPool({
 
 async function getAllGroups() {
   const [results, fields] = await pool.query('SELECT DISTINCT products.group FROM nuntagri.products');
+  console.log("Groups: " + JSON.stringify(results));
   return results.map(value => value.group);
 }
 
 async function getGroupProductsFrom(message) {
   const [results, fields] = await pool.execute(`SELECT * FROM nuntagri.products WHERE ? LIKE concat('%',products.group,'%')`, [message]);
-  console.log("Results: " + JSON.stringify(results));
+  console.log("Group Products: " + JSON.stringify(results));
   return results;
 }
 
@@ -34,13 +35,20 @@ async function getProduct(name, number) {
     value = number;
   }
   const [results, fields] = await pool.execute(sql, [value]);
-  console.log("Results: " + JSON.stringify(results));
-  return results;
+  console.log("Product: " + JSON.stringify(results));
+  return results[0];
+}
+
+async function getUser(phoneNumber) {
+  const [results, fields] = await pool.execute('SELECT * FROM nuntagri.users WHERE phone_num = ?', [phoneNumber]);
+  console.log("\n\nUser: " + JSON.stringify(results));
+  return results[0];
 }
 
 module.exports = {
   pool: pool,
   getAllGroups: getAllGroups,
   getGroupProductsFrom: getGroupProductsFrom,
-  getProduct: getProduct
+  getProduct: getProduct,
+  getUser: getUser
 };

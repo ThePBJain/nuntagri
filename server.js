@@ -54,7 +54,7 @@ let options = {
 };
 
 let geocoder = NodeGeocoder(options);
-let { pool, getAllGroups, getGroupProductsFrom, getProduct } = require('./mysqllib');
+let { pool, getAllGroups, getGroupProductsFrom, getProduct, getUser } = require('./mysqllib');
 
 /* //GEOCODER EXAMPLE
 	geocoder.geocode('Amsterdam, Noord-Holland, Netherlands')
@@ -1631,7 +1631,7 @@ app.use(({method, url}, rsp, next) => {
   });
   next();
 });
-app.use(bodyParser.json({ verify: verifyRequestSignature }));
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // Webhook setup
@@ -1643,44 +1643,11 @@ app.get('/webhook', (req, res) => {
     res.sendStatus(400);
   }
 });
-//to test if it works...
 
 app.get('/api/', function (req, res) {
 	//redirect to website test
   //res.redirect('http://nuntagri.com');
   res.send("ping");
-});
-
-app.get('/', function (req, res) {
-  //redirect to website test
-  //res.redirect('http://nuntagri.com');
-  getAllGroups().then((value) => {
-    res.send(value);
-  });
-});
-
-app.get('/getGroupProductsFrom', function (req, res) {
-  //redirect to website test
-  //res.redirect('http://nuntagri.com');
-  let message = req.query.message;
-  getGroupProductsFrom(message).then((value) => {
-    res.send(value);
-  });
-});
-
-app.get('/getProduct', function (req, res) {
-  //redirect to website test
-  //res.redirect('http://nuntagri.com');
-  let item = req.query.message;
-  if (isInteger(item)) {
-    getProduct(null, parseInt(item, 10)).then((value) => {
-      res.send(value);
-    });
-  } else {
-    getProduct(item, null).then((value) => {
-      res.send(value);
-    });
-  }
 });
 
 function isInteger(value) {
@@ -1752,21 +1719,31 @@ app.get('/twilio', function (req, res) {
 });
 
 
-const db = [
-  {name: "walnut", price: 10},
-  {name: "peanut", price: 5},
-  {name: "almond", price: 2},
-  {name: "pistachio", price: 4}
-];
+
+function validateUser(req, res, next) {
+
+  let sender = (req.body.From).replace('whatsapp:','');
+  getUser(sender).then((value) => {
+    if (value) {
+      next();
+    } else {
+      const twimlResp = new MessagingResponse();
+      twimlResp.message("You are not authorized to use this tool.");
+      res.end(twimlResp.toString());
+    }
+  }).catch((err) => {
+    console.error("validateUser Error: " + err);
+    res.status(400).send('Failed to pull user.');
+  });
+}
 
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
-app.post('/api/pricesTwilio', async function (req, res) {
+app.post('/api/pricesTwilio',[validateUser], async function (req, res) {
   let text = req.body.Body; //message from twilio to send to Wit.
   const twimlResp = new MessagingResponse();
   //console.log(req);
-  console.log("\n\n Message from WhatsApp: " + text);
   //console.log("\n Query:" + JSON.stringify(req.query));
   // We retrieve the user's current session, or create one if it doesn't exist
   // This is needed for our bot to figure out the conversation history
@@ -1781,54 +1758,56 @@ app.post('/api/pricesTwilio', async function (req, res) {
     // Let's forward the message to the Wit.ai Bot Engine
     // This will run all actions until our bot has nothing left to do
     let message = text.toLowerCase();
-    let value = 0;
-    let product = "";
-    for (let i = 0; i < db.length; i++) {
-      if (message.includes(db[i].name)) {
-        value = db[i].price;
-        product = db[i].name;
-      }
-    }
-    if (value === 0) {
-      for (let i = 0; i < db.length; i++) {
-        if (message.includes(""+(i+1))) {
-          value = db[i].price;
-        }
-      }
-    }
-    console.log('Waiting for next user messages');
+    console.log('Message: ' + message);
     res.writeHead(200, {'Content-Type': 'text/xml'});
     if (message.includes("list")) {
-      let groups = await getAllGroups();
-      let group = null;
-      let defaultMessage = "Here are the groups of products we provide: \n"
-      for (let i = 0; i < groups.length; i++) {
-        if (message.includes(groups[i])) {
-          group = groups[i];
-        }
-        defaultMessage += (i+1) + ". " + groups[i] + "\n";
-      }
-      if (group) {
-        let message = "Here is a list of products under this group: \n"
+      let products = await getGroupProductsFrom(message);
 
-        for (let i = 0; i < db.length; i++) {
-          message += (i+1) + ". " + db[i].name + "\n";
+      if (products && products.length > 0) {
+        let response = "Here is a list of products under the group (" + products[0].group + "): \n"
+
+        for (const product of products) {
+          response += product.id + ". " + product.name + "\n";
         }
-        twimlResp.message(message);
-      } else {
-        twimlResp.message(defaultMessage);
+        twimlResp.message(response);
+      } else { // Use default response if no matching group found
+        let groups = await getAllGroups();
+        let defaultResponse = "Here are the groups of products we provide: \n"
+        for (let i = 0; i < groups.length; i++) {
+          defaultResponse += (i+1) + ". " + groups[i] + "\n";
+        }
+        twimlResp.message(defaultResponse);
       }
-    } else if (value > 0) {
-      twimlResp.message("The price is ₹" + value + " for a bag of" + product);
+    } else if (message.includes("price")) {
+      let item = message.replace('price','').trim();
+      let name = null, number = null;
+      if (isInteger(item)) {
+        number = parseInt(item, 10);
+      } else {
+        name = item;
+      }
+      let product = await getProduct(name, number);
+      if (product){
+        if (product.price) {
+          twimlResp.message("The price is ₹" + product.price + " for 1 kg of " + product.name + ".");
+        } else {
+          twimlResp.message( "We're sorry. " + product.name + " is currently unavailable.");
+        }
+      } else {
+        twimlResp.message("Sorry, I was unable to figure out what product you wanted information on. You can ask to: \n" +
+        "list groups\n" +
+        "list [group]\n" +
+        "price [product name/number]");
+      }
     } else {
       // Default message
       twimlResp.message("Welcome. You can ask to: \n" +
         "list groups\n" +
         "list [group]\n" +
-        "or ask the price for a specific product name/number.");
+        "price [product name/number]");
     }
     res.end(twimlResp.toString());
-  }else{
+  } else {
     console.log('Failed to read text from twilio!!!');
     res.writeHead(200, {'Content-Type': 'text/xml'});
     twimlResp.message("Could not read your text.");

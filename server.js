@@ -96,15 +96,15 @@ const PORT = process.env.PORT || 443; //443
 //const PORT = 443;
 
 // Wit.ai parameters
-const WIT_TOKEN = process.env.WIT_TOKEN;
-const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
+// const WIT_TOKEN = process.env.WIT_TOKEN;
+// const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
 // Messenger API parameters
-const FB_PAGE_ID = process.env.FB_PAGE_ID;
-if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
-const FB_PAGE_TOKEN = process.env.FB_PAGE_TOKEN;
-if (!FB_PAGE_TOKEN) { throw new Error('missing FB_PAGE_TOKEN') }
-const FB_APP_SECRET = process.env.FB_APP_SECRET;
-if (!FB_APP_SECRET) { throw new Error('missing FB_APP_SECRET') }
+// const FB_PAGE_ID = process.env.FB_PAGE_ID;
+// if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
+// const FB_PAGE_TOKEN = process.env.FB_PAGE_TOKEN;
+// if (!FB_PAGE_TOKEN) { throw new Error('missing FB_PAGE_TOKEN') }
+// const FB_APP_SECRET = process.env.FB_APP_SECRET;
+// if (!FB_APP_SECRET) { throw new Error('missing FB_APP_SECRET') }
 
 let FB_VERIFY_TOKEN = null;
 crypto.randomBytes(8, (err, buff) => {
@@ -1602,6 +1602,7 @@ const actions = {
 };
 
 // Setting up our bot
+/*
 const wit = new Wit({
   accessToken: WIT_TOKEN,
   actions,
@@ -1614,15 +1615,12 @@ const witJunk = new Wit({
   actions,
   logger: new log.Logger(log.INFO)
 });
-
+*/
 
 
 // Starting our webserver and putting it all together
 const app = express();
 
-// *** mongo *** //
-// app.set('dbUrl', config.mongoURI[process.env.NODE_ENV]);
-// mongoose.connect(app.get('dbUrl'));
 
 
 app.use(({method, url}, rsp, next) => {
@@ -1657,6 +1655,7 @@ function isInteger(value) {
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
+/*
 app.get('/twilio', function (req, res) {
 	let text = req.query.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
@@ -1717,7 +1716,7 @@ app.get('/twilio', function (req, res) {
 			res.end(twimlResp.toString());
 	}
 });
-
+*/
 
 
 function validateUser(req, res, next) {
@@ -1820,6 +1819,7 @@ app.post('/api/pricesTwilio',[validateUser], async function (req, res) {
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
+/*
 app.post('/junkTwilio', function (req, res) {
   let text = req.body.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
@@ -2011,6 +2011,7 @@ app.post('/junkTwilio', function (req, res) {
 	}
 
 });
+*/
 
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...

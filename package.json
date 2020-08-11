@@ -20,7 +20,7 @@
     "dotenv": "^4.0.0",
     "express": "^4.16.3",
     "json-query": "^2.1.1",
-    "mongoose": "^5.1.0",
+    "mongoose": "^5.7.5",
     "node-geocoder": "^3.16.0",
     "node-schedule": "^1.1.1",
     "node-wit": "^4.0.0",

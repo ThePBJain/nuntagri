@@ -18,33 +18,33 @@ const crypto = require('crypto');
 const express = require('express');
 const fetch = require('node-fetch');
 const request = require('request');
-var jsonQuery = require('json-query');
-var schedule = require('node-schedule');
-var dateFormat = require('dateformat');
-var http = require('http');
-var https = require('https');
-var fs = require('fs');
+let jsonQuery = require('json-query');
+let schedule = require('node-schedule');
+let dateFormat = require('dateformat');
+let http = require('http');
+let https = require('https');
+let fs = require('fs');
 
 //email sending related
 const sgMail = require('@sendgrid/mail');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 //twilio specific
-var twilio = require('twilio');
+let twilio = require('twilio');
 const MessagingResponse = require('twilio').twiml.MessagingResponse;
-var accountSid = process.env.TWILIO_ACCOUNT_SID; // Your Account SID from www.twilio.com/console
-var authToken = process.env.TWILIO_AUTHTOKEN;   // Your Auth Token from www.twilio.com/console
+let accountSid = process.env.TWILIO_ACCOUNT_SID; // Your Account SID from www.twilio.com/console
+let authToken = process.env.TWILIO_AUTHTOKEN;   // Your Auth Token from www.twilio.com/console
 console.log("TWILIO TEST: " + accountSid + "\n" + authToken);
-var client = new twilio(accountSid, authToken);
+let client = new twilio(accountSid, authToken);
 
 //payment processing
-var stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-var numJunkLeadsSent = 0;
-var numJunkInvoices = 1;
+let stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+let numJunkLeadsSent = 0;
+let numJunkInvoices = 1;
 
 //geocoder using OpenStreetMap
-var NodeGeocoder = require('node-geocoder');
-var options = {
+let NodeGeocoder = require('node-geocoder');
+let options = {
   provider: 'openstreetmap',
 
   // Optional depending on the providers
@@ -53,7 +53,8 @@ var options = {
   formatter: null         // 'gpx', 'string', ...
 };
 
-var geocoder = NodeGeocoder(options);
+let geocoder = NodeGeocoder(options);
+let { pool, getAllGroups, getGroupProductsFrom, getProduct, getUser } = require('./mysqllib');
 
 /* //GEOCODER EXAMPLE
 	geocoder.geocode('Amsterdam, Noord-Holland, Netherlands')
@@ -65,18 +66,18 @@ var geocoder = NodeGeocoder(options);
   		});
 */
 //mongodb database setup
-var mongoose = require('mongoose');
+/*let mongoose = require('mongoose');
 
 // *** config file *** //
-var config = require('./_config');
+let config = require('./_config');
 
 // *** seed the database *** //
 if (process.env.NODE_ENV === 'development') {
-  var seedAdmin = require('./models/seeds/admin.js');
-  var productAdmin = require('./models/seeds/product.js');
+  let seedAdmin = require('./models/seeds/admin.js');
+  let productAdmin = require('./models/seeds/product.js');
   seedAdmin();
   productAdmin();
-}
+}*/
 
 //moving on...
 let Wit = null;
@@ -95,15 +96,15 @@ const PORT = process.env.PORT || 443; //443
 //const PORT = 443;
 
 // Wit.ai parameters
-const WIT_TOKEN = process.env.WIT_TOKEN;
-const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
+// const WIT_TOKEN = process.env.WIT_TOKEN;
+// const WIT_JUNK_TOKEN = process.env.WIT_JUNK_TOKEN;
 // Messenger API parameters
-const FB_PAGE_ID = process.env.FB_PAGE_ID;
-if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
-const FB_PAGE_TOKEN = process.env.FB_PAGE_TOKEN;
-if (!FB_PAGE_TOKEN) { throw new Error('missing FB_PAGE_TOKEN') }
-const FB_APP_SECRET = process.env.FB_APP_SECRET;
-if (!FB_APP_SECRET) { throw new Error('missing FB_APP_SECRET') }
+// const FB_PAGE_ID = process.env.FB_PAGE_ID;
+// if (!FB_PAGE_ID) { throw new Error('missing FB_PAGE_ID') }
+// const FB_PAGE_TOKEN = process.env.FB_PAGE_TOKEN;
+// if (!FB_PAGE_TOKEN) { throw new Error('missing FB_PAGE_TOKEN') }
+// const FB_APP_SECRET = process.env.FB_APP_SECRET;
+// if (!FB_APP_SECRET) { throw new Error('missing FB_APP_SECRET') }
 
 let FB_VERIFY_TOKEN = null;
 crypto.randomBytes(8, (err, buff) => {
@@ -149,8 +150,8 @@ function callSendAPI(messageData) {
 
   }, function (error, response, body) {
     if (!error && response.statusCode == 200) {
-      var recipientId = body.recipient_id;
-      var messageId = body.message_id;
+      let recipientId = body.recipient_id;
+      let messageId = body.message_id;
 
       console.log("Successfully sent generic message with id %s to recipient %s",
         messageId, recipientId);
@@ -183,15 +184,15 @@ function sendJobToDirtyDog(order) {
 	const fname = order.name.split(' ').slice(0, -1).join(' ');
 	const lname = order.name.split(' ').slice(-1).join(' ');
 	const phone = order.phone.substring(2);
-	//var d = new Date(order.time.substring(0, (order.time.length-6)));
-	var d = new Date(order.time);
+	//let d = new Date(order.time.substring(0, (order.time.length-6)));
+	let d = new Date(order.time);
 	console.log("Original getTime: " + d.getTime());
-	var timeStamp = d.getTime()/1000;
+	let timeStamp = d.getTime()/1000;
 	console.log("Date Object: " + d);
 	console.log("Timestamp: " + timeStamp);
-  var abbr = abbrRegion(order.location.state, "abbr");
-	var options = { method: 'POST',
-	  url: 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
+  let abbr = abbrRegion(order.location.state, "abbr");
+	let options = { method: 'POST',
+	  url: 'about:blank', // Disabling Junk hauling 'http://dirtydoghauling.com/pawtracker/process/add_job.php',
 	  headers:
 	   {
 		 'content-type': 'application/x-www-form-urlencoded' },
@@ -241,7 +242,7 @@ function sendJobToDirtyDog(order) {
 // sessionId -> {fbid: facebookUserId, context: sessionState, numItems: ItemsInCart, type: TypeOfItemsInList, list: jsonQueryOfItems, cart: ArrayOfItemsInPreviousCart}
 
 //Set this up to put session as a user db table on mongodb
-var User = require('./models/user');
+let User = require('./models/user');
 const sessions = {};
 
 const findOrCreateSession = (fbid) => {
@@ -280,7 +281,7 @@ const findOrCreateSession = (fbid) => {
         if (!user) {
           //create new model
           console.log("Found no user");
-          var newUser = new User({
+          let newUser = new User({
             phoneID: fbid
           });
           newUser.save(function(err, user){
@@ -383,16 +384,16 @@ const firstEntityValue = (entities, entity) => {
 const selectDeliverers = (order, sessionId) => {
 	console.log("Selecting the drivers------------------");
 	//change Date object stored in order.time to proper formatting
-	var orderTime = dateFormat(order.time, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+	let orderTime = dateFormat(order.time, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 	order.time = orderTime;
 	console.log("Order: " + JSON.stringify(order));
-	var bestdeliverer = null;
-	var closest = 10000;
-	var bestK = null;
+	let bestdeliverer = null;
+	let closest = 10000;
+	let bestK = null;
 	Object.keys(sessions).forEach(k => {
 		if (sessions[k].deliverer != null) {
 			// Yep, got it!
-			var deliverer = sessions[k].deliverer;
+			let deliverer = sessions[k].deliverer;
 			//algo to find best driver goes here.
 			if(deliverer.capacity >= 40){
 				bestdeliverer = deliverer;
@@ -404,7 +405,7 @@ const selectDeliverers = (order, sessionId) => {
 	console.log("BestDeliverer: " + bestdeliverer)
 	if(bestdeliverer){
 		console.log("Best driver is: " + sessions[bestK])
-		var isEmpty = bestdeliverer.queue < 1;
+		let isEmpty = bestdeliverer.queue < 1;
 
 		//if it is empty start queue movement after pushing order in.
 		bestdeliverer.queue.push(order);
@@ -414,8 +415,8 @@ const selectDeliverers = (order, sessionId) => {
 			//check if bestdeliverer is facebook or text
 			if(sessions[bestK].fbid.substring(0,6) == "100011"){
 				//sms twilio
-				var phone = "+" + (sessions[bestK].fbid).substring(6);
-				var message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
+				let phone = "+" + (sessions[bestK].fbid).substring(6);
+				let message = "Next order by user: \n" + "Name: " + bestdeliverer.queue[0].name +
 														"\nItems: " + bestdeliverer.queue[0].items +
 														"\nAddress: " + bestdeliverer.queue[0].location.string +
 														"\nPhone Number: " + bestdeliverer.queue[0].phone +
@@ -432,8 +433,8 @@ const selectDeliverers = (order, sessionId) => {
 					.then((message) => console.log(message.sid));
 			}else{
 				//facebook
-				var sender = sessions[bestK].fbid;
-				var message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name +
+				let sender = sessions[bestK].fbid;
+				let message = "Pick up: \n" + bestdeliverer.queue[0].amount + " kgs of " + bestdeliverer.queue[0].name +
 														"\nAddress: " + bestdeliverer.queue[0].start +
 														"\nContact at: " + sessions[sessionId].fbid;
 				fbMessage(sender, message);
@@ -449,8 +450,8 @@ const selectDeliverers = (order, sessionId) => {
 // Check if timezone is in Daylight savings time
 
 Date.prototype.stdTimezoneOffset = function () {
-    var jan = new Date(this.getFullYear(), 0, 1);
-    var jul = new Date(this.getFullYear(), 6, 1);
+    let jan = new Date(this.getFullYear(), 0, 1);
+    let jul = new Date(this.getFullYear(), 6, 1);
     return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
 }
 
@@ -462,7 +463,7 @@ Date.prototype.isDstObserved = function () {
 // State Abbreviation conversion
 // Convert full state name to the abbr version
 function abbrRegion(input, to) {
-    var states = [
+    let states = [
         ['Alabama', 'AL'],
         ['Alaska', 'AK'],
         ['American Samoa', 'AS'],
@@ -526,7 +527,7 @@ function abbrRegion(input, to) {
     ];
 
     // So happy that Canada and the US have distinct abbreviations
-    var provinces = [
+    let provinces = [
         ['Alberta', 'AB'],
         ['British Columbia', 'BC'],
         ['Manitoba', 'MB'],
@@ -542,9 +543,9 @@ function abbrRegion(input, to) {
         ['Yukon', 'YT'],
     ];
 
-    var regions = states.concat(provinces);
+    let regions = states.concat(provinces);
 
-    var i; // Reusable loop variable
+    let i; // Reusable loop variable
     if (to == 'abbr') {
         input = input.replace(/\w\S*/g, function (txt) { return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase(); });
         for (i = 0; i < regions.length; i++) {
@@ -568,8 +569,8 @@ function abbrRegion(input, to) {
 function generateInvoice(invoice, filename, success, error) {
   //formatting date into readable version
   invoice.date = dateFormat(invoice.date, "mediumDate");
-	var postData = JSON.stringify(invoice);
-	var options = {
+	let postData = JSON.stringify(invoice);
+	let options = {
 		hostname  : "invoice-generator.com",
 		port      : 443,
 		path      : "/",
@@ -580,9 +581,9 @@ function generateInvoice(invoice, filename, success, error) {
 		}
 	};
 
-	var file = fs.createWriteStream(filename);
+	let file = fs.createWriteStream(filename);
 
-	var req = https.request(options, function(res) {
+	let req = https.request(options, function(res) {
 		res.on('data', function(chunk) {
 			file.write(chunk);
 		})
@@ -602,7 +603,7 @@ function generateInvoice(invoice, filename, success, error) {
 	}
 }
 
-/*var invoice = {
+/*let invoice = {
 	logo: "https://scontent.fagc1-2.fna.fbcdn.net/v/t1.0-9/15056399_883978575070770_2719717534750147548_n.png?oh=663d94e87412dded7c64011442b2c12a&amp;oe=59CFF0BF",
 	from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
 	to: "Dirty Dog Hauling",
@@ -634,8 +635,8 @@ generateInvoice(invoice, 'invoice.pdf', function() {
 function sendEmail(userEmail, success, error){
 
 
-	var file = fs.readFileSync('invoice.pdf');
-	var base64File = new Buffer(file).toString('base64');
+	let file = fs.readFileSync('invoice.pdf');
+	let base64File = new Buffer(file).toString('base64');
   const msg = {
     to: userEmail,
     from: {
@@ -675,7 +676,7 @@ function sendEmail(userEmail, success, error){
 
 
 function items(sessionId, context, entities) {
-  var item = firstEntityValue(entities, 'item');
+  let item = firstEntityValue(entities, 'item');
   //console.log("Entities: " + JSON.stringify(entities));
   if(context.fail){
     delete context.fail;
@@ -697,7 +698,7 @@ function items(sessionId, context, entities) {
 function verifyAddress(sessionId, context, entities) {
   //used only for demo to find cart that addToCart method will send it too.
   //todo: get this function to wait to complete before returning...
-    var loc = firstEntityValue(entities, 'location')
+    let loc = firstEntityValue(entities, 'location')
     //console.log("Location understood by wit.ai: " + loc.value);
     if(loc){
       geocoder.geocode(loc.value)
@@ -705,7 +706,7 @@ function verifyAddress(sessionId, context, entities) {
         //console.log(res);
         if(res.length != 0){
           console.log("We found the geolocation.");
-          var location = {
+          let location = {
             string: loc.value,
             latitude: res[0].latitude,
             longitude: res[0].longitude,
@@ -724,7 +725,7 @@ function verifyAddress(sessionId, context, entities) {
           //delete context.success;
           //context.fail = true;
           console.log("We failed to find location.");
-          var location = {
+          let location = {
             string: loc.value,
             latitude: 0.0,
             longitude: 0.0
@@ -745,22 +746,22 @@ function verifyAddress(sessionId, context, entities) {
       context.fail = true;
     }
   }
-  function checkDateTime(sessionId, context, entities) {
+function checkDateTime(sessionId, context, entities) {
     //used only for demo to find cart that addToCart method will send it too.
-    var dayTime = firstEntityValue(entities, 'datetime');
+    let dayTime = firstEntityValue(entities, 'datetime');
     if(context.fail || context.highGrain){
       delete context.fail;
       delete context.highGrain;
     }
 
     //East coast time difference
-    var timezoneOff = -5;
+    let timezoneOff = -5;
 
     //console.log("dateTime: " + dayTime.value);
     if(dayTime.value){
       delete context.fail;
       //window between 8 - 18
-      var date = new Date(dayTime.value);
+      let date = new Date(dayTime.value);
       date.setMinutes(0);
       date.setSeconds(0);
 
@@ -776,7 +777,7 @@ function verifyAddress(sessionId, context, entities) {
         date.setUTCHours(date.getUTCHours() - 1);
       }
       //date is coming in wrong because of system time zone
-      var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
+      let orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT Z");
 
       //testing by putting date object in here so we can do other things too.
       //sessions[sessionId].time = dayTime.value;
@@ -805,16 +806,16 @@ function verifyAddress(sessionId, context, entities) {
       delete context.complete;
       context.fail = true;
     }
-}
+  }
 function setName(sessionId, context, entities) {
-  //used only for demo to find cart that addToCart method will send it too.
-    var name = firstEntityValue(entities, 'contact');
+    //used only for demo to find cart that addToCart method will send it too.
+    let name = firstEntityValue(entities, 'contact');
     name = sessions[sessionId].text;
     if(context.fail){
       delete context.fail;
     }
     if(name){
-      var User = require('./models/user');
+      let User = require('./models/user');
       User.findOne({ name: name }, function (err, user) {
         if (err){
           console.log(err);
@@ -832,11 +833,11 @@ function setName(sessionId, context, entities) {
       context.fail = true;
     }
     console.log("name: " + name);
-}
+  }
 function junkOrder(sessionId, context, entities) {
   //used only for demo to find cart that addToCart method will send it too.
-    var dayTime = sessions[sessionId].time;
-    var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+    let dayTime = sessions[sessionId].time;
+    let orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
     if(context.fail){
       delete context.fail;
     }
@@ -846,8 +847,8 @@ function junkOrder(sessionId, context, entities) {
       delete context.fail;
 
       //finish order here...
-      var phone = "+" + (sessions[sessionId].fbid).substring(6);
-      var order = {
+      let phone = "+" + (sessions[sessionId].fbid).substring(6);
+      let order = {
         name: sessions[sessionId].name,
         items: sessions[sessionId].items,
         location: sessions[sessionId].location,
@@ -863,7 +864,7 @@ function junkOrder(sessionId, context, entities) {
       selectDeliverers(order, sessionId);
 
 
-      var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
+      let message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
                         "\nItems: " + sessions[sessionId].items +
                         "\nAddress: " + sessions[sessionId].location.string +
                         "\nPhone Number: " + phone + "\nTime: " + orderTime;
@@ -887,7 +888,7 @@ function junkOrder(sessionId, context, entities) {
               const leadsCharged = numJunkLeadsSent;
               const invoiceNum = "INV-"+ numJunkInvoices++;
               //generate an Invoice
-              var invoice = {
+              let invoice = {
             logo: "http://nuntagri.com/images/NuntagriFinal.png",
             from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
             to: "Dirty Dog Hauling",
@@ -1000,11 +1001,11 @@ const actions = {
   getProductList({sessionId, context, entities}) {
 	  //used only for demo to find cart that addToCart method will send it too.
     return new Promise(function(resolve, reject) {
-		var list = "\n";
+		let list = "\n";
 		Object.keys(sessions).forEach(k => {
 			if (sessions[k].seller != null) {
 			// Yep, got it!
-			for(var i=0; i < sessions[k].seller.list.length; i++){
+			for(let i=0; i < sessions[k].seller.list.length; i++){
 				list += (sessions[k].seller.list[i].name + ": " + sessions[k].seller.list[i].amount + "kgs.\n");
 			}
 		}
@@ -1017,11 +1018,11 @@ const actions = {
 		//used for selling
 		return new Promise(function(resolve, reject) {
 			//parse
-			var measurement = firstEntityValue(entities, 'measurement');
-			var load = parseFloat(firstEntityValue(entities, 'load'));
-			var product = firstEntityValue(entities, 'product');
+			let measurement = firstEntityValue(entities, 'measurement');
+			let load = parseFloat(firstEntityValue(entities, 'load'));
+			let product = firstEntityValue(entities, 'product');
 			//failure flag
-			var flag = false;
+			let flag = false;
 			//pput everything in kilos
 			console.log("Load: " + load + "\nMeasurement: " + measurement);
 			if(measurement != "Kilograms"){
@@ -1042,9 +1043,9 @@ const actions = {
 				delete context.successNew;
 				console.log("Found old seller profile");
 				context.success = true;
-				var temp = {name: product, amount: load};
-				var didUpdate = false;
-				for(var i=0; i < sessions[sessionId].seller.list.length; i++){
+				let temp = {name: product, amount: load};
+				let didUpdate = false;
+				for(let i=0; i < sessions[sessionId].seller.list.length; i++){
 					if(sessions[sessionId].seller.list[i].name == product){
 						sessions[sessionId].seller.list[i].amount = load;
 						didUpdate = true;
@@ -1084,16 +1085,16 @@ const actions = {
 	createOrder({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var measurement = firstEntityValue(entities, 'measurement');
-			var load = parseFloat(firstEntityValue(entities, 'load'));
-			var product = firstEntityValue(entities, 'product');
-			var index = 0;
-			var theProduct = null;
+			let measurement = firstEntityValue(entities, 'measurement');
+			let load = parseFloat(firstEntityValue(entities, 'load'));
+			let product = firstEntityValue(entities, 'product');
+			let index = 0;
+			let theProduct = null;
 			console.log("Load: " + load + "\nMeasurement: " + measurement + "\nProduct: " + product);
 			Object.keys(sessions).forEach(k => {
 				if (sessions[k].seller != null) {
 				// Yep, got it!
-				for(var i=0; i < sessions[k].seller.list.length; i++){
+				for(let i=0; i < sessions[k].seller.list.length; i++){
 					if(sessions[k].seller.list[i].name == product){
 						console.log(sessions[k].seller.list[i].name);
 						if(sessions[k].seller.list[i].amount >= load){
@@ -1112,7 +1113,7 @@ const actions = {
 				console.log("theProduct does exist");
 				if(sessions[sessionId].buyer != null){
 					//add order to list of orders
-					var temp = {
+					let temp = {
 						start: theProduct.location,
 						name: product,
 						amount: load,
@@ -1158,14 +1159,14 @@ const actions = {
 	verifyAddress({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var loc = firstEntityValue(entities, 'location')
+			let loc = firstEntityValue(entities, 'location')
 			console.log("Location understood by wit.ai: " + loc);
 			if(loc){
 			geocoder.geocode(loc)
   			.then(function(res) {
     			console.log(res);
     			if(res.length != 0){
-        			var location = {
+        			let location = {
         				string: loc,
         				latitude: res[0].latitude,
         				longitude: res[0].longitude
@@ -1180,7 +1181,7 @@ const actions = {
     				//should do this but will accept for now
     				//delete context.success;
 					//context.fail = true;
-					var location = {
+					let location = {
         				string: loc,
         				latitude: 0.0,
         				longitude: 0.0
@@ -1208,8 +1209,8 @@ const actions = {
 	complete({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var statement = firstEntityValue(entities, 'affirmation')
-			var deliverer = sessions[sessionId].deliverer
+			let statement = firstEntityValue(entities, 'affirmation')
+			let deliverer = sessions[sessionId].deliverer
 			//for incomplete, not done, etc...
 			if(statement){
 				if(statement.includes("in") || statement.includes("not")){
@@ -1229,7 +1230,7 @@ const actions = {
 										time: " Thu Jul 20, 2017 12:40pm "
 									}
 								]
-								var order = {
+								let order = {
 												name: sessions[sessionId].name,
 												items: sessions[sessionId].items,
 												location: sessions[sessionId].location,
@@ -1240,11 +1241,11 @@ const actions = {
 					*/
 					//same as below but with statement sent to leland saying order cancelled
 				}else if(deliverer && (statement.includes("done") || statement.includes("complete"))){ // for when task has been completed by driver
-					var message = "";
+					let message = "";
 					//get rid of old order
 					deliverer.queue.splice(0, 1);
 					if( deliverer.queue[0]){
-						var order = deliverer.queue[0];
+						let order = deliverer.queue[0];
 						message = "Next order by user: \n" + "Name: " + order.name +
 														"\nItems: " + order.items +
 														"\nAddress: " + order.location.string +
@@ -1256,7 +1257,7 @@ const actions = {
 					}
 
 					//driver's phone
-					var phone = "+" + (sessions[sessionId].fbid).substring(6);
+					let phone = "+" + (sessions[sessionId].fbid).substring(6);
 
 					//send message to driver with order or "empty job queue" message.
 					client.messages
@@ -1280,7 +1281,7 @@ const actions = {
 	items({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var items = firstEntityValue(entities, 'item');
+			let items = firstEntityValue(entities, 'item');
 			console.log("Entities: " + JSON.stringify(entities));
 			if(context.fail){
 				delete context.fail;
@@ -1302,8 +1303,8 @@ const actions = {
 	junkOrder({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var dayTime = sessions[sessionId].time;
-			var orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+			let dayTime = sessions[sessionId].time;
+			let orderTime = dateFormat(dayTime, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 			if(context.fail){
 				delete context.fail;
 			}
@@ -1313,8 +1314,8 @@ const actions = {
 				delete context.fail;
 
 				//finish order here...
-				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var order = {
+				let phone = "+" + (sessions[sessionId].fbid).substring(6);
+				let order = {
 					name: sessions[sessionId].name,
 					items: sessions[sessionId].items,
 					location: sessions[sessionId].location,
@@ -1330,7 +1331,7 @@ const actions = {
 				selectDeliverers(order, sessionId);
 
 
-				var message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
+				let message = "Order by user: \n" + "Name: " + sessions[sessionId].name +
 													"\nItems: " + sessions[sessionId].items +
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + orderTime;
@@ -1354,7 +1355,7 @@ const actions = {
       					const leadsCharged = numJunkLeadsSent;
       					const invoiceNum = "INV-"+ numJunkInvoices;
       					//generate an Invoice
-      					var invoice = {
+      					let invoice = {
 							logo: "https://scontent.fsnc1-1.fna.fbcdn.net/v/t1.0-9/19875336_1034769596658333_6527658905718200604_n.png?oh=f382576eb216f096a0760676ebecb0fd&oe=59C3A944",
 							from: "NuntAgri\n7735 Althea Ave.\nHarrisburg, Pa 17112",
 							to: "Dirty Dog Hauling",
@@ -1428,7 +1429,7 @@ const actions = {
 	checkDateTime({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var dayTime = firstEntityValue(entities, 'datetime');
+			let dayTime = firstEntityValue(entities, 'datetime');
 			if(context.fail){
 				delete context.fail;
 			}
@@ -1436,7 +1437,7 @@ const actions = {
 			if(dayTime){
 				delete context.fail;
 				//window between 8 - 18
-				var date = new Date(dayTime);
+				let date = new Date(dayTime);
 				date.setMinutes(0);
 				date.setSeconds(0);
 				//to fit time windows that we have set up (2 hours each) from 8 am to 6pm
@@ -1444,7 +1445,7 @@ const actions = {
 					date.setHours(date.getHours() - 1);
 				}
 				//date is coming in wrong because of system time zone
-				var orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
+				let orderTime = dateFormat(date, "dddd, mmmm dS, yyyy, h:MM:ss TT");
 
 				//testing by putting date object in here so we can do other things too.
 				sessions[sessionId].time = dayTime;
@@ -1474,13 +1475,13 @@ const actions = {
 	setName({sessionId, context, entities}) {
 	  //used only for demo to find cart that addToCart method will send it too.
     return new Promise(function(resolve, reject) {
-			var name = firstEntityValue(entities, 'contact');
+			let name = firstEntityValue(entities, 'contact');
 			name = sessions[sessionId].text;
 			if(context.fail){
 				delete context.fail;
 			}
 			if(name){
-				var User = require('./models/user');
+				let User = require('./models/user');
 				User.findOne({ email: name }, function (err, user) {
 					if (err){
 						console.log(err);
@@ -1520,8 +1521,8 @@ const actions = {
 		//todo: finish writing this so it works and understands which leg it's on (to seller or to buyer)
 		//todo: set up verify function to verify by driver and buyer that item has been delivered...
 		return new Promise(function(resolve, reject) {
-			//var dayTime = firstEntityValue(entities, 'datetime');
-			var dayTime = true //this doesn't need to be here, whatever entities we need will be in place here instead.e
+			//let dayTime = firstEntityValue(entities, 'datetime');
+			let dayTime = true //this doesn't need to be here, whatever entities we need will be in place here instead.e
 			if(context.fail){
 				delete context.fail;
 			}
@@ -1530,8 +1531,8 @@ const actions = {
 				delete context.fail;
 				//finish order here... do fbmessage or sms depending on their fbid "100011"
 				//fbMessage(sender, 'Added item to cart #' + CART);
-				var phone = "+" + (sessions[sessionId].fbid).substring(6);
-				var message = "Order by user: \n" + "Items: " + sessions[sessionId].items +
+				let phone = "+" + (sessions[sessionId].fbid).substring(6);
+				let message = "Order by user: \n" + "Items: " + sessions[sessionId].items +
 													"\nAddress: " + sessions[sessionId].location.string +
 													"\nPhone Number: " + phone + "\nTime: " + dayTime;
 
@@ -1556,8 +1557,8 @@ const actions = {
 	delivererInfo({sessionId, context, entities}) {
 		//used only for demo to find cart that addToCart method will send it too.
 		return new Promise(function(resolve, reject) {
-			var load = parseFloat(firstEntityValue(entities, 'load'))
-			var measurement = firstEntityValue(entities, 'measurement')
+			let load = parseFloat(firstEntityValue(entities, 'load'))
+			let measurement = firstEntityValue(entities, 'measurement')
 			console.log("Load: " + load + "\n Measurement: " + measurement);
 			sessions[sessionId].deliverer = {
 			capacity: 50,
@@ -1601,6 +1602,7 @@ const actions = {
 };
 
 // Setting up our bot
+/*
 const wit = new Wit({
   accessToken: WIT_TOKEN,
   actions,
@@ -1613,15 +1615,12 @@ const witJunk = new Wit({
   actions,
   logger: new log.Logger(log.INFO)
 });
-
+*/
 
 
 // Starting our webserver and putting it all together
 const app = express();
 
-// *** mongo *** //
-app.set('dbUrl', config.mongoURI[process.env.NODE_ENV]);
-mongoose.connect(app.get('dbUrl'));
 
 
 app.use(({method, url}, rsp, next) => {
@@ -1630,7 +1629,7 @@ app.use(({method, url}, rsp, next) => {
   });
   next();
 });
-app.use(bodyParser.json({ verify: verifyRequestSignature }));
+app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 // Webhook setup
@@ -1642,19 +1641,23 @@ app.get('/webhook', (req, res) => {
     res.sendStatus(400);
   }
 });
-//to test if it works...
 
-app.get('/', function (req, res) {
+app.get('/api/', function (req, res) {
 	//redirect to website test
-  res.redirect('http://nuntagri.com');
-  //res.send("Hi PJ");
+  //res.redirect('http://nuntagri.com');
+  res.send("ping");
 });
+
+function isInteger(value) {
+  return /^\d+$/.test(value);
+}
 
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
+/*
 app.get('/twilio', function (req, res) {
-	var text = req.query.Body; //message from twilio to send to Wit.
+	let text = req.query.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
 	//console.log(req);
 	console.log("\n\n Test: " + text);
@@ -1665,7 +1668,7 @@ app.get('/twilio', function (req, res) {
 	// We retrieve the user's current session, or create one if it doesn't exist
 	// This is needed for our bot to figure out the conversation history
 	//figure out how to fix sender to be twilio only
-	var sender = req.query.From;
+	let sender = req.query.From;
 			// binary for #
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
@@ -1713,12 +1716,113 @@ app.get('/twilio', function (req, res) {
 			res.end(twimlResp.toString());
 	}
 });
+*/
+
+
+function validateUser(req, res, next) {
+
+  let sender = (req.body.From).replace('whatsapp:','');
+  getUser(sender).then((value) => {
+    if (value) {
+      res.locals.user = value;
+      next();
+    } else {
+      const twimlResp = new MessagingResponse();
+      twimlResp.message("You are not authorized to use this tool.");
+      res.end(twimlResp.toString());
+    }
+  }).catch((err) => {
+    console.error("validateUser Error: " + err);
+    res.status(400).send('Failed to pull user.');
+  });
+}
 
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
+app.post('/api/pricesTwilio',[validateUser], async function (req, res) {
+  let text = req.body.Body; //message from twilio to send to Wit.
+  const twimlResp = new MessagingResponse();
+  //console.log(req);
+  //console.log("\n Query:" + JSON.stringify(req.query));
+  // We retrieve the user's current session, or create one if it doesn't exist
+  // This is needed for our bot to figure out the conversation history
+  //figure out how to fix sender to be twilio only
+  let sender = req.body.From;
+  console.log("Sender: " + sender);
+
+
+  if(text){
+    // We received a text message
+    // todo: setup promises so that everything is synchronous
+    // Let's forward the message to the Wit.ai Bot Engine
+    // This will run all actions until our bot has nothing left to do
+    let message = text.toLowerCase();
+    console.log('Message: ' + message);
+    res.writeHead(200, {'Content-Type': 'text/xml'});
+    if (message.includes("list")) {
+      let products = await getGroupProductsFrom(message);
+
+      if (products && products.length > 0) {
+        let response = "Here is a list of products under the group (" + products[0].group + "): \n"
+
+        for (const product of products) {
+          response += product.id + ". " + product.name + "\n";
+        }
+        twimlResp.message(response);
+      } else { // Use default response if no matching group found
+        let groups = await getAllGroups();
+        let defaultResponse = "Here are the groups of products we provide: \n"
+        for (let i = 0; i < groups.length; i++) {
+          defaultResponse += (i+1) + ". " + groups[i] + "\n";
+        }
+        twimlResp.message(defaultResponse);
+      }
+    } else if (message.includes("price")) {
+      let item = message.replace('price','').trim();
+      let name = null, number = null;
+      if (isInteger(item)) {
+        number = parseInt(item, 10);
+      } else {
+        name = item;
+      }
+      let product = await getProduct(name, number);
+      if (product){
+        if (product.price) {
+          twimlResp.message("The price is ₹" + product.price + " for 1 kg of " + product.name + ".");
+        } else {
+          twimlResp.message( "We're sorry. " + product.name + " is currently unavailable.");
+        }
+      } else {
+        twimlResp.message("Sorry, I was unable to figure out what product you wanted information on. You can ask to: \n" +
+        "list groups\n" +
+        "list [group]\n" +
+        "price [product name/number]");
+      }
+    } else {
+      // Default message
+      twimlResp.message("Welcome " + res.locals.user.name + ". You can ask to: \n" +
+        "list groups\n" +
+        "list [group] (e.g., list almonds) \n" +
+        "price [product name/number] (e.g., price Star 250g)");
+    }
+    res.end(twimlResp.toString());
+  } else {
+    console.log('Failed to read text from twilio!!!');
+    res.writeHead(200, {'Content-Type': 'text/xml'});
+    twimlResp.message("Could not read your text.");
+    res.end(twimlResp.toString());
+  }
+
+});
+
+
+//message handler for twilio
+// post isn't working because of bodyParser is going to verify with below function & gets rid of body...
+//find a way to fix that so we dont have this issue.
+/*
 app.post('/junkTwilio', function (req, res) {
-  var text = req.body.Body; //message from twilio to send to Wit.
+  let text = req.body.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
 	//console.log(req);
 	console.log("\n\n Test: " + text);
@@ -1726,11 +1830,11 @@ app.post('/junkTwilio', function (req, res) {
 	// We retrieve the user's current session, or create one if it doesn't exist
 	// This is needed for our bot to figure out the conversation history
 	//figure out how to fix sender to be twilio only
-	var sender = req.body.From;
+	let sender = req.body.From;
 			// binary for #
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
-	var sessionId = findOrCreateSession(sender);
+	let sessionId = findOrCreateSession(sender);
   //console.log("0. Sessions looks like: " + JSON.stringify(sessions));
 	//check to reset context
 	//if conversationTime == null
@@ -1744,7 +1848,7 @@ app.post('/junkTwilio', function (req, res) {
 		//new conversation if 10 minutes has elapsed
 		console.log("Found that 10 minutes elapsed");
 		//testing deleting the entire session...
-		var temp = sessions[sessionId];
+		let temp = sessions[sessionId];
 		delete sessions[sessionId];
 		sessionId = findOrCreateSession(sender);
 		sessions[sessionId] = temp;
@@ -1773,39 +1877,39 @@ app.post('/junkTwilio', function (req, res) {
           const dateTime = firstEntityValue(entities, 'datetime');
           const contact = firstEntityValue(entities, 'contact');
           const location = firstEntityValue(entities, 'location');
-          var context = sessions[sessionId].context;
+          let context = sessions[sessionId].context;
           const recipientId = sessions[sessionId].fbid;
           console.log("Entities: " + JSON.stringify(entities));
           if(item && item.confidence > 0.5){
             items(sessionId, context, entities);
             console.log("Great!  Please provide the property address with your zip code.");
-            if(recipientId.substring(0,6) == "100011"){
+            if(recipientId.substring(0,6) === "100011"){
               sessions[sessionId].message += ("\n" + "Great!  Please provide the property address with your zip code.");
             }
           }else if(location){
             //todo: setup so that could pull location data from database and offer that instead
             //if location was found, make sure that location entity contains the house numbers
-            var index = text.indexOf(location.value);
-            var n = text.lastIndexOf(" ", index-2);
+            let index = text.indexOf(location.value);
+            let n = text.lastIndexOf(" ", index-2);
             //if -1 then put 0 to start at beginning anyways
             n = n<0 ? 0 : n;
-            var str = text.substring(n, index + location.value.length);
+            let str = text.substring(n, index + location.value.length);
             //make sure to tighten scope so only takes numbers right before... not "I live at ..."
             entities.location[0].value = str;
             verifyAddress(sessionId, context, entities);
             console.log("Ok, what date and time would you like service.");
-            if(recipientId.substring(0,6) == "100011"){
+            if(recipientId.substring(0,6) === "100011"){
               sessions[sessionId].message += ("\n" + "Ok, what date and time would you like service.");
             }
           }else if(dateTime){
             checkDateTime(sessionId, context, entities);
             console.log("Would a two hour window starting at this time work for you? (yes/no only):");
             console.log(context.foundTime);
-            if(recipientId.substring(0,6) == "100011"){
+            if(recipientId.substring(0,6) === "100011"){
 
               if(context.highGrain){
                 sessions[sessionId].message += ("\n" + "Please provide an exact date & time for service.");
-              }else if(context.fail == true){
+              }else if(context.fail === true){
                 sessions[sessionId].message += ("\n" + "We cannot accomodate that time. What other day & time would work?");
               }else{
                 sessions[sessionId].message += ("\n" + "Would a two hour window starting at this time work for you? (yes/no only):"
@@ -1813,29 +1917,28 @@ app.post('/junkTwilio', function (req, res) {
               }
             }
 
-          }else if(polarAns && polarAns.value == "No"){
+          }else if(polarAns && polarAns.value === "No"){
 
-            if(recipientId.substring(0,6) == "100011"){
+            if(recipientId.substring(0,6) === "100011"){
               sessions[sessionId].message += ("\n" + "Ok, what date and time would you like service.");
             }
-          }else if(polarAns && polarAns.value == "Yes"){
-            if(sessions[sessionId].name && sessions[sessionId].name != ""){
+          }else if(polarAns && polarAns.value === "Yes"){
+            if(sessions[sessionId].name && sessions[sessionId].name !== ""){
               junkOrder(sessionId, context, entities);
               console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
-              if(recipientId.substring(0,6) == "100011"){
+              if(recipientId.substring(0,6) === "100011"){
                 sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
               }
             }else{
-              if(recipientId.substring(0,6) == "100011"){
+              if(recipientId.substring(0,6) === "100011"){
                 sessions[sessionId].message += ("\n" + "What name should we use for this appointment?");
                 context.getName = true;
               }
             }
           }else if(contact && contact.confidence > 0.6 || context.getName){
-            //console.log("WE IN HERE BOIIIIII");
             if(sessions[sessionId].items == null){
               console.log("I'm sorry. Could you be more specific about what items you'd like hauled.");
-              if(recipientId.substring(0,6) == "100011"){
+              if(recipientId.substring(0,6) === "100011"){
                 sessions[sessionId].message += ("\n" + "I'm sorry. Could you be more specific about what items you'd like hauled.");
               }
             }else{
@@ -1845,13 +1948,13 @@ app.post('/junkTwilio', function (req, res) {
               setName(sessionId, context, entities);
               junkOrder(sessionId, context, entities);
               console.log("You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
-              if(recipientId.substring(0,6) == "100011"){
+              if(recipientId.substring(0,6) === "100011"){
                 sessions[sessionId].message += ("\n" + "You are confirmed.  We will call you at this number (" +req.body.From+  "), 30 minutes before we arrive. If you have any questions, call 717-232-4009.  We will see you soon.");
               }
             }
           }else if((greeting || junkGreeting) && !polarAns){
             console.log("Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
-            if(recipientId.substring(0,6) == "100011"){
+            if(recipientId.substring(0,6) === "100011"){
               sessions[sessionId].message += ("\n" + "Hi. Welcome to Dirty Dog Hauling Text 2 Schedule, powered by NuntAgri. What items would like hauled today?");
             }
           }else{
@@ -1882,7 +1985,7 @@ app.post('/junkTwilio', function (req, res) {
     				//remove time
     				sessions[sessionId].conversationTime = null;
     				//deleting the entire session...
-    				var temp = sessions[sessionId];
+    				let temp = sessions[sessionId];
     				User.update( {phoneID: sessions[sessionId].fbid}, {
     					name: sessions[sessionId].name, address: sessions[sessionId].location.string
     				}, function(err, numberAffected, rawResponse) {
@@ -1909,13 +2012,14 @@ app.post('/junkTwilio', function (req, res) {
 	}
 
 });
+*/
 
 //message handler for twilio
 // post isn't working because of bodyParser is going to verify with below function & gets rid of body...
 //find a way to fix that so we dont have this issue.
 /*
 app.get('/junkTwilio', function (req, res) {
-	var text = req.query.Body; //message from twilio to send to Wit.
+	let text = req.query.Body; //message from twilio to send to Wit.
 	const twimlResp = new MessagingResponse();
 	//console.log(req);
 	console.log("\n\n Test: " + text);
@@ -1923,11 +2027,11 @@ app.get('/junkTwilio', function (req, res) {
 	// We retrieve the user's current session, or create one if it doesn't exist
 	// This is needed for our bot to figure out the conversation history
 	//figure out how to fix sender to be twilio only
-	var sender = req.query.From;
+	let sender = req.query.From;
 			// binary for #
 	sender = "100011" + sender.substring(1);
 	console.log("Sender: " + sender);
-	var sessionId = findOrCreateSession(sender);
+	let sessionId = findOrCreateSession(sender);
 	console.log("0. Sessions looks like: " + JSON.stringify(sessions));
 	//check to reset context
 	//if conversationTime == null
@@ -1941,7 +2045,7 @@ app.get('/junkTwilio', function (req, res) {
 		//new conversation if 10 minutes has elapsed
 		console.log("Found that 10 minutes elapsed");
 		//testing deleting the entire session...
-		var temp = sessions[sessionId];
+		let temp = sessions[sessionId];
 		console.log("1. Sessions looks like: " + JSON.stringify(sessions) + "\nThis person looks like: " + JSON.stringify(temp));
 		delete sessions[sessionId];
 		sessionId = findOrCreateSession(sender);
@@ -1986,7 +2090,7 @@ app.get('/junkTwilio', function (req, res) {
 				//remove time
 				sessions[sessionId].conversationTime = null;
 				//deleting the entire session...
-				var temp = sessions[sessionId];
+				let temp = sessions[sessionId];
 				User.update( {phoneID: sessions[sessionId].fbid}, {
 					name: sessions[sessionId].name
 				}, function(err, numberAffected, rawResponse) {
@@ -2034,7 +2138,7 @@ app.post('/webhook', (req, res) => {
           // We retrieve the Facebook user ID of the sender
           const sender = event.sender.id;
 		  //308115649579044 -  should not take results from this fbid because it's us.
-		  if(sender == "883952921740002"){
+		  if(sender === "883952921740002"){
 		      console.log("got request from self!!!!!");
 		      //res.sendStatus(200);
 		      return;
@@ -2090,7 +2194,7 @@ app.post('/webhook', (req, res) => {
         } else {
           console.log('received event', JSON.stringify(event));
           //this is where you handle the call for postback need to also make sure that when facebook pings you, you still respond with 200.
-          var test = event.postback;
+          let test = event.postback;
 
           //console.log("test is: " + test);
           if(event.postback){
@@ -2112,7 +2216,7 @@ app.post('/webhook', (req, res) => {
  *
  */
 function verifyRequestSignature(req, res, buf) {
-  var signature = req.headers["x-hub-signature"];
+  let signature = req.headers["x-hub-signature"];
 	console.log("Checking Security -----------------");
   if (!signature) {
     // For testing, let's log an error. In production, you should throw an
@@ -2120,15 +2224,15 @@ function verifyRequestSignature(req, res, buf) {
     console.log("We are checking security in here");
     console.error("Couldn't validate the signature.");
   } else {
-    var elements = signature.split('=');
-    var method = elements[0];
-    var signatureHash = elements[1];
+    let elements = signature.split('=');
+    let method = elements[0];
+    let signatureHash = elements[1];
 
-    var expectedHash = crypto.createHmac('sha1', FB_APP_SECRET)
+    let expectedHash = crypto.createHmac('sha1', FB_APP_SECRET)
                         .update(buf)
                         .digest('hex');
 
-    if (signatureHash != expectedHash) {
+    if (signatureHash !== expectedHash) {
       throw new Error("Couldn't validate the request signature.");
     }
   }
@@ -2137,20 +2241,34 @@ function verifyRequestSignature(req, res, buf) {
 //app.listen(PORT);
 //console.log('Listening on :' + PORT + '...');
 
+let server = null;
 //create server and put on port 443...
 console.log("Trying port: " + PORT);
-if(PORT == 443){
-	var options = {
+if(PORT === 443){
+	let options = {
 		key: fs.readFileSync('privkey.pem'),
 		cert: fs.readFileSync('cert.pem')
 	};
 	//for starting prod server on ssl
-	https.createServer(options, app).listen(443);
+	server = https.createServer(options, app).listen(443);
 }else{
 	//for dev testing server
-	http.createServer(app).listen(PORT);
+	server = http.createServer(app).listen(PORT);
 }
 console.log('Listening on port: ' + PORT + '...');
+
+process.on('SIGTERM', async () => {
+  console.info('SIGTERM signal received.');
+  console.log('Closing http server.');
+  let err = await pool.end();
+  if (err) {
+    console.error(err);
+  }
+  server.close(() => {
+    console.log('Http server closed.');
+  });
+});
+
 //module.exports = app;
 module.exports = {
   abbrRegion: abbrRegion,

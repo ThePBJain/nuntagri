@@ -1,0 +1,48 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "nuntagri-server",
+      "image": "353524253745.dkr.ecr.us-east-2.amazonaws.com/nuntagri:v0.0.5",
+      "cpu": 256,
+      "memoryReservation": 256,
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "hostPort": 0,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [],
+      "mountPoints": [],
+      "volumesFrom": []
+    }
+  ],
+  "family": "nuntagri",
+  "taskRoleArn": "ECSTaskRole",
+  "executionRoleArn": "ecsTaskExecutionRole",
+  "revision": 6,
+  "volumes": [],
+  "status": "ACTIVE",
+  "requiresAttributes": [
+    {
+      "name": "com.amazonaws.ecs.capability.ecr-auth"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.task-iam-role"
+    },
+    {
+      "name": "ecs.capability.execution-role-ecr-pull"
+    }
+  ],
+  "placementConstraints": [],
+  "compatibilities": [
+    "EC2"
+  ],
+  "requiresCompatibilities": [
+    "EC2"
+  ]
+}

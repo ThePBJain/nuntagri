@@ -1724,6 +1724,7 @@ function validateUser(req, res, next) {
   let sender = (req.body.From).replace('whatsapp:','');
   getUser(sender).then((value) => {
     if (value) {
+      res.locals.user = value;
       next();
     } else {
       const twimlResp = new MessagingResponse();
@@ -1800,10 +1801,10 @@ app.post('/api/pricesTwilio',[validateUser], async function (req, res) {
       }
     } else {
       // Default message
-      twimlResp.message("Welcome. You can ask to: \n" +
+      twimlResp.message("Welcome " + res.locals.user.name + ". You can ask to: \n" +
         "list groups\n" +
-        "list [group]\n" +
-        "price [product name/number]");
+        "list [group] (e.g., list almonds) \n" +
+        "price [product name/number] (e.g., price Star 250g)");
     }
     res.end(twimlResp.toString());
   } else {
